@@ -41,20 +41,21 @@ class Application:
         matched_routes = [
             route
             for route in self.router.routes
-            if self.match_router_pattern(route["path"], self.request)
+            if route["request_method"] == request.request_method
+            and self.match_router_pattern(route["path"], self.request)
         ]
 
         if matched_routes:
             matched_route = matched_routes[-1]
 
             controller_name = matched_route["controller"]
-            method_name = matched_route["method"]
+            callable_method = matched_route["callable_method"]
 
             if controller_name:
                 controller = self.resolve(controller_name)
-                method = getattr(controller, method_name)
+                method = getattr(controller, callable_method)
             else:
-                method = method_name
+                method = callable_method
 
             method(self.request)
 
@@ -72,7 +73,7 @@ class Application:
         response_body, status = self.load_route()
 
         response_headers = [
-            ("Content-type", "text/plain"),
+            ("Content-type", "text/html"),
         ]
 
         start_response(status, response_headers)

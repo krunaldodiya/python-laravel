@@ -3,26 +3,25 @@ class Router:
         self.routes = []
 
     def get(self, route, handler):
-        if callable(handler):
-            self.routes.append(
-                {
-                    "path": route,
-                    "method": "GET",
-                    "controller": None,
-                    "method": handler,
-                }
-            )
-        else:
-            if not len(handler) == 2:
-                raise Exception("Invalid route")
+        self.make(route, handler, "GET")
 
+    def post(self, route, handler):
+        self.make(route, handler, "POST")
+
+    def make(self, route, handler, requested_method):
+        if not (callable(handler) or (isinstance(handler, list) and len(handler) == 2)):
+            raise Exception("Invalid route")
+
+        if type(handler) == list:
             controller, method = handler
+        else:
+            controller, method = None, handler
 
-            self.routes.append(
-                {
-                    "path": route,
-                    "method": "GET",
-                    "controller": controller,
-                    "method": method,
-                }
-            )
+        self.routes.append(
+            {
+                "path": route,
+                "request_method": requested_method,
+                "controller": controller,
+                "callable_method": method,
+            }
+        )
