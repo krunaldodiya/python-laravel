@@ -1,22 +1,11 @@
-import importlib
-from pathlib import Path
-
 from core.application import Application
 from core.controller import Controller
+from core.file_loader import load_files
 
 
-def load_files(path: Path):
-    files = [file for file in path.glob("*.py")]
+load_files("app/Http/Controllers")
+load_files("app/routes")
 
-    for file in files:
-        module_path = f"{path}/{file.stem}"
-        module_path = module_path.replace("/", ".")
-
-        importlib.import_module(module_path, package=None)
-
-
-load_files(Path("app/Http/Controllers"))
-load_files(Path("app/routes"))
 
 application = Application()
 

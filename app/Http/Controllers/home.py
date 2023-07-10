@@ -1,5 +1,6 @@
 from core.controller import Controller
 from core.view import View
+from core.helpers import *
 
 
 class HomeController(Controller):
@@ -10,7 +11,7 @@ class HomeController(Controller):
         return View.make("index", {"name": "krunal"})
 
     def store(self, request):
-        return "test"
+        return config("app")
 
     def user(self, request):
         username = request.get("username")
