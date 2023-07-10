@@ -3,10 +3,26 @@ class Router:
         self.routes = []
 
     def get(self, route, handler):
-        self.routes.append(
-            {
-                "path": route,
-                "method": "GET",
-                "handler": handler,
-            }
-        )
+        if callable(handler):
+            self.routes.append(
+                {
+                    "path": route,
+                    "method": "GET",
+                    "controller": None,
+                    "method": handler,
+                }
+            )
+        else:
+            if not len(handler) == 2:
+                raise Exception("Invalid route")
+
+            controller, method = handler
+
+            self.routes.append(
+                {
+                    "path": route,
+                    "method": "GET",
+                    "controller": controller,
+                    "method": method,
+                }
+            )

@@ -1,6 +1,5 @@
 import re
 from wsgiref.simple_server import make_server
-from Controllers.home import HomeController
 from core.request import Request
 from core.router import Router
 
@@ -12,6 +11,7 @@ class Application:
     def __init__(self) -> None:
         self.request = request
         self.router = router
+        self.__bindings = {}
 
     def match_router_pattern(self, router_pattern, request):
         pattern = re.escape(router_pattern)
@@ -47,7 +47,18 @@ class Application:
         if matched_routes:
             matched_route = matched_routes[-1]
 
-            response_body = matched_route["handler"](HomeController(), self.request)
+            controller_name = matched_route["controller"]
+            method_name = matched_route["method"]
+
+            if controller_name:
+                controller = self.resolve(controller_name)
+                method = getattr(controller, method_name)
+            else:
+                method = method_name
+
+            method(self.request)
+
+            response_body = method(self.request)
 
             return response_body, "200 OK"
         else:
@@ -67,6 +78,13 @@ class Application:
         start_response(status, response_headers)
 
         return [response_body.encode("utf-8")]
+
+    def bind(self, key, binding):
+        self.__bindings[key] = lambda: binding()
+
+    def resolve(self, key):
+        function = self.__bindings[key]
+        return function()
 
     def boot(self, host="localhost", port=5000):
         self.server = make_server(host, port, app=self.route_handler)

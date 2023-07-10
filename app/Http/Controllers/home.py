@@ -1,4 +1,7 @@
-class HomeController:
+from core.controller import Controller
+
+
+class HomeController(Controller):
     def home(self, request):
         return "home"
 
