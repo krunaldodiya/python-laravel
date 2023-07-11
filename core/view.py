@@ -7,7 +7,7 @@ class View:
 
     @staticmethod
     def make(file, args={}):
-        env = Environment(loader=FileSystemLoader("app/resources/views"))
+        env = Environment(loader=FileSystemLoader("resources/views"))
 
         template = env.get_template(f"{file}.html")
 

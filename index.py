@@ -1,19 +1,20 @@
+from core.Support.Facades.Facade import Facade
 from core.application import Application
 from core.controller import Controller
 from core.file_loader import load_files
+from core.router import Router
 
 
 load_files("app/Http/Controllers")
-load_files("app/routes")
+load_files("routes")
 
 
-application = Application()
+if __name__ == "__main__":
+    application = Application()
 
-for controller in Controller.__subclasses__():
-    application.bind(controller.__name__, controller)
+    for controller in Controller.__subclasses__():
+        application.bind(controller.__name__, controller)
 
-test = application.resolve(controller.__name__)
+    application.bind("router", lambda: Router())
 
-application.boot()
-
-application.run()
+    application.run()

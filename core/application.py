@@ -1,5 +1,5 @@
 import re
-from wsgiref.simple_server import make_server
+from waitress import serve
 from core.request import Request
 from core.router import Router
 
@@ -12,6 +12,10 @@ class Application:
         self.request = request
         self.router = router
         self.__bindings = {}
+
+    @property
+    def bindings(self):
+        return self.__bindings
 
     def match_router_pattern(self, router_pattern, request):
         pattern = re.escape(router_pattern)
@@ -67,7 +71,7 @@ class Application:
 
             return response_body, "404 NOT_FOUND"
 
-    def route_handler(self, environ, start_response):
+    def request_handler(self, environ, start_response):
         self.request.initialize(environ)
 
         response_body, status = self.load_route()
@@ -87,8 +91,8 @@ class Application:
         function = self.__bindings[key]
         return function()
 
-    def boot(self, host="localhost", port=5000):
-        self.server = make_server(host, port, app=self.route_handler)
+    def run(self, host="localhost", port=5000):
+        serve(self.request_handler, host=host, port=port)
 
-    def run(self):
-        self.server.serve_forever()
+    def test(self):
+        return self.bindings["router"]
