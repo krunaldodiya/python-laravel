@@ -1,8 +1,10 @@
 import re
 from waitress import serve
 from core.Support.Facades.Route import Route
+from core.Support.Facades.View import View
 from core.Support.Foundation.Container import Container
 from core.Support.Foundation.Request import Request
+from core.template import Template
 from core.controller import Controller
 
 from core.router import Router
@@ -35,10 +37,13 @@ class Application:
         )
 
     def register_providers(self):
-        self.singleton("router", lambda _: Router())
+        self.singleton("route", lambda _: Router())
+        self.singleton("view", lambda _: Template())
 
     def register_facades(self):
         Route.app = self
+        View.app = self
+
         Controller.app = self
 
     def match_router_pattern(self, router_pattern, request):
@@ -66,7 +71,7 @@ class Application:
         return None
 
     def load_route(self):
-        router = self.resolve("router")
+        router = self.resolve("route")
 
         matched_routes = [
             route

@@ -1,7 +1,7 @@
 from core.Support.Facades.Facade import Facade
 
 
-class Route(metaclass=Facade):
+class View(metaclass=Facade):
     @staticmethod
     def get_facade_accessor():
-        return "route"
+        return "view"

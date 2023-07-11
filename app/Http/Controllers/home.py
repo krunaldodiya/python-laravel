@@ -1,9 +1,13 @@
+from core.Support.Facades.View import View
 from core.controller import Controller
-from core.view import View
 from core.helpers import *
+from core.template import Template
 
 
 class HomeController(Controller):
+    def __init__(self) -> None:
+        self.template = Template()
+
     def home(self, request):
         return View.make("home")
 
