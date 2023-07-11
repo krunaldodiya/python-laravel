@@ -1,9 +1,15 @@
-import json
+from urllib.parse import parse_qs
 
 
-class Request:
+class HttpRequest:
     def __init__(self) -> None:
-        pass
+        self.http_host = None
+        self.server_name = None
+        self.server_port = None
+        self.query_string = None
+        self.path_info = None
+        self.request_method = None
+        self.body = None
 
     def initialize(self, environ) -> None:
         self.http_host = environ["HTTP_HOST"]
@@ -13,6 +19,12 @@ class Request:
         self.path_info = environ["PATH_INFO"]
         self.request_method = environ["REQUEST_METHOD"]
 
+        self.body = (
+            parse_qs(environ["wsgi.input"].read().decode())
+            if self.request_method == "POST"
+            else None
+        )
+
         self.params = {}
 
     def set_params(self, params):
@@ -20,6 +32,3 @@ class Request:
 
     def get(self, param):
         return self.params.get(param)
-
-    def __str__(self) -> str:
-        return json.dumps(self.__dict__)

@@ -10,7 +10,7 @@ def config(key=None):
 
     file_name = parts[0]
 
-    file_path = Path(f"app/config/{file_name}.py")
+    file_path = Path(f"config/{file_name}.py")
 
     if not file_path.is_file():
         raise Exception("file not found")

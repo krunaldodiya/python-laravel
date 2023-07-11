@@ -1,9 +1,10 @@
 import re
 from waitress import serve
+from core.Support.Facades.Request import Request
 from core.Support.Facades.Route import Route
 from core.Support.Facades.View import View
 from core.Support.Foundation.Container import Container
-from core.Support.Foundation.Request import Request
+from core.http_request import HttpRequest
 from core.template import Template
 from core.controller import Controller
 
@@ -14,7 +15,12 @@ class Application:
     def __init__(self) -> None:
         self.__container: Container = Container()
 
-        self.request = Request()
+        self.register_providers()
+        self.register_facades()
+
+        self.__request = self.resolve("request")
+
+        self.__router = self.resolve("route")
 
     def make(self, key: str, make_args=None):
         return self.__container.resolve(key, make_args)
@@ -37,10 +43,12 @@ class Application:
         )
 
     def register_providers(self):
+        self.singleton("request", lambda _: HttpRequest())
         self.singleton("route", lambda _: Router())
         self.singleton("view", lambda _: Template())
 
     def register_facades(self):
+        Request.app = self
         Route.app = self
         View.app = self
 
@@ -71,13 +79,11 @@ class Application:
         return None
 
     def load_route(self):
-        router = self.resolve("route")
-
         matched_routes = [
             route
-            for route in router.routes
-            if route["request_method"] == self.request.request_method
-            and self.match_router_pattern(route["path"], self.request)
+            for route in self.__router.routes
+            if route["request_method"] == self.__request.request_method
+            and self.match_router_pattern(route["path"], self.__request)
         ]
 
         if matched_routes:
@@ -92,9 +98,9 @@ class Application:
             else:
                 method = callable_method
 
-            method(self.request)
+            method(self.__request)
 
-            response_body = method(self.request)
+            response_body = method(self.__request)
 
             return response_body, "200 OK"
         else:
@@ -103,7 +109,7 @@ class Application:
             return response_body, "404 NOT_FOUND"
 
     def request_handler(self, environ, start_response):
-        self.request.initialize(environ)
+        self.__request.initialize(environ)
 
         response_body, status = self.load_route()
 

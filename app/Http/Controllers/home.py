@@ -1,3 +1,5 @@
+import json
+
 from core.Support.Facades.View import View
 from core.controller import Controller
 from core.helpers import *
@@ -15,7 +17,7 @@ class HomeController(Controller):
         return View.make("index", {"name": "krunal"})
 
     def store(self, request):
-        return config("app")
+        return json.dumps(request.body)
 
     def user(self, request):
         username = request.get("username")
