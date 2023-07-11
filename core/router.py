@@ -1,14 +1,3 @@
-from core.Support.Facades.Facade import Facade
-
-
-class RouterFacade(metaclass=Facade):
-    def get(self, route, handler):
-        pass
-
-    def post(self, route, handler):
-        pass
-
-
 class Router:
     def __init__(self) -> None:
         self.routes = []

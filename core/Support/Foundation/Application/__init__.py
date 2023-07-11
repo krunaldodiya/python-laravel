@@ -1,21 +1,39 @@
 import re
 from waitress import serve
-from core.request import Request
-from core.router import Router
+from core.Support.Foundation.Container import Container
+from core.Support.Foundation.Request import Request
 
-router = Router()
-request = Request()
+from core.router import Router
 
 
 class Application:
     def __init__(self) -> None:
-        self.request = request
-        self.router = router
-        self.__bindings = {}
+        self.__container: Container = Container()
 
-    @property
-    def bindings(self):
-        return self.__bindings
+        self.request = Request()
+
+    def make(self, key: str, make_args=None):
+        return self.__container.resolve(key, make_args)
+
+    def resolve(self, key: str):
+        return self.__container.resolve(key, None)
+
+    def bind(self, key: str, binding_resolver):
+        self.__container.set_binding(
+            key,
+            binding_resolver,
+            False,
+        )
+
+    def singleton(self, key: str, binding_resolver):
+        self.__container.set_singleton(
+            key,
+            binding_resolver,
+            True,
+        )
+
+    def register_providers(self):
+        self.singleton("router", lambda _: Router())
 
     def match_router_pattern(self, router_pattern, request):
         pattern = re.escape(router_pattern)
@@ -42,10 +60,12 @@ class Application:
         return None
 
     def load_route(self):
+        router = self.resolve("router")
+
         matched_routes = [
             route
-            for route in self.router.routes
-            if route["request_method"] == request.request_method
+            for route in router.routes
+            if route["request_method"] == self.request.request_method
             and self.match_router_pattern(route["path"], self.request)
         ]
 
@@ -84,15 +104,5 @@ class Application:
 
         return [response_body.encode("utf-8")]
 
-    def bind(self, key, binding):
-        self.__bindings[key] = lambda: binding()
-
-    def resolve(self, key):
-        function = self.__bindings[key]
-        return function()
-
     def run(self, host="localhost", port=5000):
         serve(self.request_handler, host=host, port=port)
-
-    def test(self):
-        return self.bindings["router"]
