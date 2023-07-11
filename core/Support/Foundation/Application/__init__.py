@@ -1,7 +1,9 @@
 import re
 from waitress import serve
+from core.Support.Facades.Route import Route
 from core.Support.Foundation.Container import Container
 from core.Support.Foundation.Request import Request
+from core.controller import Controller
 
 from core.router import Router
 
@@ -34,6 +36,10 @@ class Application:
 
     def register_providers(self):
         self.singleton("router", lambda _: Router())
+
+    def register_facades(self):
+        Route.app = self
+        Controller.app = self
 
     def match_router_pattern(self, router_pattern, request):
         pattern = re.escape(router_pattern)
