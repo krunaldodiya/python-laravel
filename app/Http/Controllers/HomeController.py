@@ -18,4 +18,4 @@ class HomeController(Controller):
     def user(self, request):
         username = request.get("username")
 
-        return f"hello, {username}"
+        return {"username": username}

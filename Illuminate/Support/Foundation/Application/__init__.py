@@ -1,13 +1,15 @@
 from importlib import import_module
+import json
 import re
 from waitress import serve
 from Illuminate.Support.Facades.Request import Request
+from Illuminate.Support.Facades.Response import Response
 from Illuminate.Support.Facades.Route import Route
 from Illuminate.Support.Facades.View import View
 from Illuminate.Support.Foundation.Container import Container
 from Illuminate.http_request import HttpRequest
+from Illuminate.http_response import HttpResponse
 from Illuminate.template import Template
-from Illuminate.controller import Controller
 
 from Illuminate.router import Router
 
@@ -44,11 +46,13 @@ class Application:
 
     def register_providers(self):
         self.singleton("request", lambda: HttpRequest())
+        self.singleton("response", lambda: HttpResponse())
         self.singleton("route", lambda: Router())
         self.singleton("view", lambda: Template())
 
     def register_facades(self):
         Request.app = self
+        Response.app = self
         Route.app = self
         View.app = self
 
@@ -88,7 +92,7 @@ class Application:
 
             return self.resolve(matched_route["module_path"])
 
-    def load_route(self):
+    def make_response(self):
         matched_routes = [
             route
             for route in self.__router.routes
@@ -101,29 +105,22 @@ class Application:
 
             if matched_route["callable"]:
                 method = matched_route["action"]
-                response_body = method(self.__request)
-                return response_body, "200 OK"
             else:
                 controller = self.get_controller(matched_route)
                 method = getattr(controller, matched_route["action_name"])
-                response_body = method(self.__request)
-                return response_body, "200 OK"
+
+            return Response.make(method(self.__request), "200 OK")
         else:
-            response_body = "Route not found."
-            return response_body, "404 NOT_FOUND"
+            return Response.make("Route not found.", "404 NOT_FOUND")
 
     def request_handler(self, environ, start_response):
         self.__request.initialize(environ)
 
-        response_body, status = self.load_route()
+        http_response: HttpResponse = self.make_response()
 
-        response_headers = [
-            ("Content-type", "text/html"),
-        ]
+        start_response(http_response.status, http_response.response_headers)
 
-        start_response(status, response_headers)
-
-        return [response_body.encode("utf-8")]
+        return [http_response.response_body]
 
     def run(self, host="localhost", port=5000):
         serve(self.request_handler, host=host, port=port)
