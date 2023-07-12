@@ -1,5 +1,7 @@
 import json
 
+from Illuminate.template import HtmlResponse
+
 
 class HttpResponse:
     def __init__(self) -> None:
@@ -32,5 +34,10 @@ class HttpResponse:
             self.__response_body = response_body.encode("utf-8")
             self.__status = status
             self.__response_headers = {"Content-type": "text/plain"}
+
+        if type(response_body) == HtmlResponse:
+            self.__response_body = response_body.data.encode("utf-8")
+            self.__status = status
+            self.__response_headers = {"Content-type": "text/html"}
 
         return self

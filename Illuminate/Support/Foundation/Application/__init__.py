@@ -109,7 +109,12 @@ class Application:
                 controller = self.get_controller(matched_route)
                 method = getattr(controller, matched_route["action_name"])
 
-            return Response.make(method(self.__request), "200 OK")
+            response = method(self.__request)
+
+            if isinstance(response, HttpResponse):
+                return response
+            else:
+                return Response.make(response, "200 OK")
         else:
             return Response.make("Route not found.", "404 NOT_FOUND")
 
