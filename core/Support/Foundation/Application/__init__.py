@@ -1,3 +1,4 @@
+from importlib import import_module
 import re
 from waitress import serve
 from core.Support.Facades.Request import Request
@@ -54,58 +55,64 @@ class Application:
 
         Controller.app = self
 
-    def match_router_pattern(self, router_pattern, request):
-        pattern = re.escape(router_pattern)
+    def match_router_pattern(self, route_path):
+        pattern = re.escape(route_path)
 
         params = re.findall(r":(\w+)", pattern)
 
         if not params:
-            return router_pattern == request.path_info
+            return route_path == self.__request.path_info
 
         for param in params:
             pattern = pattern.replace(f":{param}", r"(?P<" + param + r">[^/]+)")
 
         pattern = f"^{pattern}$"
 
-        match = re.match(pattern, request.path_info)
+        match = re.match(pattern, self.__request.path_info)
 
         if match:
             router_params = {param: str(match.group(param)) for param in params}
 
-            request.set_params(router_params)
+            self.__request.set_params(router_params)
 
             return {key: value for key, value in match.groupdict().items()}
 
         return None
+
+    def get_controller(self, matched_route):
+        try:
+            return self.resolve(matched_route["module_path"])
+        except:
+            ModuleClass = import_module(matched_route["module_path"])
+
+            ModuleInstance = getattr(ModuleClass, matched_route["module_name"])
+
+            self.singleton(matched_route["module_path"], lambda _: ModuleInstance())
+
+            return self.resolve(matched_route["module_path"])
 
     def load_route(self):
         matched_routes = [
             route
             for route in self.__router.routes
             if route["request_method"] == self.__request.request_method
-            and self.match_router_pattern(route["path"], self.__request)
+            and self.match_router_pattern(route["path"])
         ]
 
         if matched_routes:
             matched_route = matched_routes[-1]
 
-            controller_name = matched_route["controller"]
-            callable_method = matched_route["callable_method"]
-
-            if controller_name:
-                controller = self.resolve(controller_name)
-                method = getattr(controller, callable_method)
+            if matched_route["callable"]:
+                method = matched_route["action"]
+                response_body = method(self.__request)
+                return response_body, "200 OK"
             else:
-                method = callable_method
-
-            method(self.__request)
-
-            response_body = method(self.__request)
-
-            return response_body, "200 OK"
+                controller = self.get_controller(matched_route)
+                method = getattr(controller, matched_route["action_name"])
+                response_body = method(self.__request)
+                return response_body, "200 OK"
         else:
             response_body = "Route not found."
-
             return response_body, "404 NOT_FOUND"
 
     def request_handler(self, environ, start_response):

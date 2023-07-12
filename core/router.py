@@ -8,20 +8,41 @@ class Router:
     def post(self, route, handler):
         self.make(route, handler, "POST")
 
-    def make(self, route, handler, requested_method):
-        if not (callable(handler) or (isinstance(handler, list) and len(handler) == 2)):
-            raise Exception("Invalid route")
-
-        if type(handler) == list:
-            controller, method = handler
-        else:
-            controller, method = None, handler
-
-        self.routes.append(
-            {
-                "path": route,
-                "request_method": requested_method,
-                "controller": controller,
-                "callable_method": method,
+    def __parse_handler(self, handler):
+        if callable(handler):
+            return {
+                "callable": True,
+                "action": handler,
+                "module_path": None,
+                "module_name": None,
+                "action_name": None,
             }
-        )
+
+        if isinstance(handler, list):
+            module, method = handler
+
+            if (
+                len(handler) == 2
+                and module.__module__.startswith("app.Http.Controllers")
+                and isinstance(handler[1], str)
+            ):
+                return {
+                    "callable": False,
+                    "action": None,
+                    "module_path": module.__module__,
+                    "module_name": module.__name__,
+                    "action_name": method,
+                }
+
+        raise Exception("Invalid route")
+
+    def make(self, route, handler, requested_method):
+        handler_data = self.__parse_handler(handler)
+
+        data = {
+            "path": route,
+            "request_method": requested_method,
+            **handler_data,
+        }
+
+        self.routes.append(data)

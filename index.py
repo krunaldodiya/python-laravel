@@ -5,6 +5,5 @@ if __name__ == "__main__":
     application = Application()
 
     load_files("routes")
-    load_files("app/Http/Controllers")
 
     application.run()
