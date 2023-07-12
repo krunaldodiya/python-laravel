@@ -1,8 +1,8 @@
 import json
 
-from core.Support.Facades.View import View
-from core.controller import Controller
-from core.helpers import *
+from Illuminate.Support.Facades.View import View
+from Illuminate.controller import Controller
+from Illuminate.helpers import *
 
 
 class HomeController(Controller):

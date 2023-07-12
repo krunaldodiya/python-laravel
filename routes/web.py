@@ -1,5 +1,5 @@
 from app.Http.Controllers.HomeController import HomeController
-from core.Support.Facades.Route import Route
+from Illuminate.Support.Facades.Route import Route
 
 Route.get("/closure", lambda request: "testing")
 Route.get("/", [HomeController, "home"])

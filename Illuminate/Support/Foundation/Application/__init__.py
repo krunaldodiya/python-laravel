@@ -1,15 +1,15 @@
 from importlib import import_module
 import re
 from waitress import serve
-from core.Support.Facades.Request import Request
-from core.Support.Facades.Route import Route
-from core.Support.Facades.View import View
-from core.Support.Foundation.Container import Container
-from core.http_request import HttpRequest
-from core.template import Template
-from core.controller import Controller
+from Illuminate.Support.Facades.Request import Request
+from Illuminate.Support.Facades.Route import Route
+from Illuminate.Support.Facades.View import View
+from Illuminate.Support.Foundation.Container import Container
+from Illuminate.http_request import HttpRequest
+from Illuminate.template import Template
+from Illuminate.controller import Controller
 
-from core.router import Router
+from Illuminate.router import Router
 
 
 class Application:

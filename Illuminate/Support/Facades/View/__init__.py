@@ -1,4 +1,4 @@
-from core.Support.Facades.Facade import Facade
+from Illuminate.Support.Facades.Facade import Facade
 
 
 class View(metaclass=Facade):
