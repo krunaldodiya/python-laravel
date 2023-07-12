@@ -3,7 +3,7 @@ class Container:
         self.bindings = {}
         self.singletons = {}
 
-    def resolve(self, key: str, make_args):
+    def resolve(self, key: str):
         try:
             binding = self.bindings.get(key, None)
 
@@ -18,12 +18,12 @@ class Container:
                 try:
                     singleton_instance = self.singletons[key]
                 except KeyError:
-                    singleton_instance = binding_resolver(make_args)
+                    singleton_instance = binding_resolver()
                     self.singletons[key] = singleton_instance
 
                 return singleton_instance
 
-            return binding_resolver(make_args)
+            return binding_resolver()
         except Exception as e:
             raise Exception(e)
 

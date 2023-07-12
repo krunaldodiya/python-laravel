@@ -20,14 +20,13 @@ class Application:
         self.register_facades()
 
         self.__request = self.resolve("request")
-
         self.__router = self.resolve("route")
 
-    def make(self, key: str, make_args=None):
-        return self.__container.resolve(key, make_args)
+    def make(self, key: str):
+        return self.__container.resolve(key)
 
     def resolve(self, key: str):
-        return self.__container.resolve(key, None)
+        return self.__container.resolve(key)
 
     def bind(self, key: str, binding_resolver):
         self.__container.set_binding(
@@ -44,16 +43,14 @@ class Application:
         )
 
     def register_providers(self):
-        self.singleton("request", lambda _: HttpRequest())
-        self.singleton("route", lambda _: Router())
-        self.singleton("view", lambda _: Template())
+        self.singleton("request", lambda: HttpRequest())
+        self.singleton("route", lambda: Router())
+        self.singleton("view", lambda: Template())
 
     def register_facades(self):
         Request.app = self
         Route.app = self
         View.app = self
-
-        Controller.app = self
 
     def match_router_pattern(self, route_path):
         pattern = re.escape(route_path)
@@ -87,7 +84,7 @@ class Application:
 
             ModuleInstance = getattr(ModuleClass, matched_route["module_name"])
 
-            self.singleton(matched_route["module_path"], lambda _: ModuleInstance())
+            self.singleton(matched_route["module_path"], lambda: ModuleInstance())
 
             return self.resolve(matched_route["module_path"])
 
