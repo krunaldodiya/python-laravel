@@ -3,29 +3,46 @@ import inspect
 from importlib import import_module
 
 
-def get_instance(info):
-    module = import_module(info.__module__)
-    Module_class = getattr(module, info.__name__)
-
-    return Module_class()
+class AnotherService:
+    def get_name(self):
+        return "AnotherService"
 
 
-class Hello:
-    def __init__(self) -> None:
-        self.name = "hello"
+class Service:
+    def __init__(self, another_service: AnotherService) -> None:
+        self.another_service = another_service
+
+    def get_name(self):
+        return "Service"
 
 
 class Test:
-    def __init__(self, hello: Hello) -> None:
-        self.hello = hello
+    def __init__(self, service: Service) -> None:
+        self.service = service
 
 
-info = inspect.getfullargspec(Test)
+def get_dependencies(class_info):
+    def get_instance(info):
+        module = import_module(info.__module__)
+        module_class = getattr(module, info.__name__)
 
-dependencies = [
-    get_instance(info.annotations[arg]) for arg in info.args if arg != "self"
-]
+        return create_instance(module_class)
+
+    def create_instance(class_info):
+        dependencies = get_dependencies(class_info)
+        return class_info(*dependencies)
+
+    args_info = inspect.getfullargspec(class_info)
+
+    return [
+        get_instance(args_info.annotations[arg])
+        for arg in args_info.args
+        if arg != "self"
+    ]
+
+
+dependencies = get_dependencies(Test)
 
 test = Test(*dependencies)
 
-print(test.hello.name)
+print(test.service.another_service.get_name())

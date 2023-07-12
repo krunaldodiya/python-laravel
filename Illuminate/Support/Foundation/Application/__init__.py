@@ -1,4 +1,5 @@
 from importlib import import_module
+import inspect
 import re
 from waitress import serve
 from Illuminate.Support.Facades.Request import Request
@@ -79,15 +80,38 @@ class Application:
 
         return None
 
+    def get_dependencies(self, class_info):
+        def get_instance(info):
+            module = import_module(info.__module__)
+            module_class = getattr(module, info.__name__)
+
+            return create_instance(module_class)
+
+        def create_instance(class_info):
+            dependencies = self.get_dependencies(class_info)
+            return class_info(*dependencies)
+
+        args_info = inspect.getfullargspec(class_info)
+
+        return [
+            get_instance(args_info.annotations[arg])
+            for arg in args_info.args
+            if arg != "self"
+        ]
+
     def get_controller(self, matched_route):
         try:
             return self.resolve(matched_route["module_path"])
         except:
-            ModuleClass = import_module(matched_route["module_path"])
+            module = import_module(matched_route["module_path"])
 
-            ModuleInstance = getattr(ModuleClass, matched_route["module_name"])
+            module_class = getattr(module, matched_route["module_name"])
 
-            self.singleton(matched_route["module_path"], lambda: ModuleInstance())
+            dependencies = self.get_dependencies(module_class)
+
+            self.singleton(
+                matched_route["module_path"], lambda: module_class(*dependencies)
+            )
 
             return self.resolve(matched_route["module_path"])
 
