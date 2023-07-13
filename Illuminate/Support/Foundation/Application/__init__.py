@@ -6,6 +6,7 @@ from waitress import serve
 
 from Illuminate.Support.Facades.Response import Response
 from Illuminate.Support.Foundation.Container import Container
+from Illuminate.file_loader import load_files
 from Illuminate.http_request import HttpRequest
 from Illuminate.http_response import HttpResponse
 from Illuminate.template import Template
@@ -134,6 +135,8 @@ class Application:
             return Response.make("Route not found.", "404 NOT_FOUND")
 
     def __call__(self, environ, start_response):
+        load_files("routes")
+
         self.__request.initialize(environ)
 
         http_response: HttpResponse = self.make_response()
