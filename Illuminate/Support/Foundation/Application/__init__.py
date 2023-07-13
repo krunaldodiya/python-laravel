@@ -144,6 +144,3 @@ class Application:
         start_response(http_response.status, http_response.response_headers)
 
         return [http_response.response_body]
-
-    def run(self, host="localhost", port=5000):
-        serve(self, host=host, port=port)
