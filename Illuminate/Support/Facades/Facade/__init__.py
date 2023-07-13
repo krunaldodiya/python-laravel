@@ -1,6 +1,8 @@
 class Facade(type):
-    def __getattr__(cls, method):
-        facade_accessor = cls.get_facade_accessor()
-        binding = cls.app.resolve(facade_accessor)
+    def __getattr__(cls, attribute, *args, **kwargs):
+        from wsgi import application
 
-        return getattr(binding, method)
+        facade_accessor = cls.get_facade_accessor()
+        binding = application.resolve(facade_accessor)
+
+        return getattr(binding, attribute)

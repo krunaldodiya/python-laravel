@@ -1,11 +1,10 @@
 from importlib import import_module
 import inspect
 import re
+
 from waitress import serve
-from Illuminate.Support.Facades.Request import Request
+
 from Illuminate.Support.Facades.Response import Response
-from Illuminate.Support.Facades.Route import Route
-from Illuminate.Support.Facades.View import View
 from Illuminate.Support.Foundation.Container import Container
 from Illuminate.http_request import HttpRequest
 from Illuminate.http_response import HttpResponse
@@ -19,7 +18,6 @@ class Application:
         self.__container: Container = Container()
 
         self.register_providers()
-        self.register_facades()
 
         self.__request = self.resolve("request")
         self.__router = self.resolve("route")
@@ -49,12 +47,6 @@ class Application:
         self.singleton("response", lambda: HttpResponse())
         self.singleton("route", lambda: Router())
         self.singleton("view", lambda: Template())
-
-    def register_facades(self):
-        Request.app = self
-        Response.app = self
-        Route.app = self
-        View.app = self
 
     def match_router_pattern(self, route_path):
         pattern = re.escape(route_path)
@@ -141,7 +133,7 @@ class Application:
         else:
             return Response.make("Route not found.", "404 NOT_FOUND")
 
-    def request_handler(self, environ, start_response):
+    def __call__(self, environ, start_response):
         self.__request.initialize(environ)
 
         http_response: HttpResponse = self.make_response()
@@ -151,4 +143,4 @@ class Application:
         return [http_response.response_body]
 
     def run(self, host="localhost", port=5000):
-        serve(self.request_handler, host=host, port=port)
+        serve(self, host=host, port=port)
