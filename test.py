@@ -10,7 +10,7 @@ app = Application()
 
 class World:
     def __init__(self) -> None:
-        self.name = "hello world"
+        self.greet = "hello world"
 
 
 class Hello:
@@ -19,9 +19,10 @@ class Hello:
 
 
 class Test:
-    def __init__(self, name: str, hello: Hello) -> None:
-        self.name = name
+    def __init__(self, hello: Hello) -> None:
         self.hello = hello
 
 
 test = app.make(Test, {"hello": app.make(Hello)})
+
+print(test.hello.world.greet)

@@ -10,24 +10,25 @@ class Container:
 
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
         base_key = self.__get_base_key(key)
+
         binding = self.__bindings.get(base_key)
 
-        if not binding:
-            return self.__load_module_if_exists(base_key, make_args)
+        if binding:
+            is_singleton = binding["is_singleton"]
 
-        is_singleton = binding["is_singleton"]
+            binding_resolver = binding["binding_resolver"]
 
-        binding_resolver = binding["binding_resolver"]
-
-        if is_singleton:
-            instance = self.__singletons.get(base_key)
-            if instance is None:
+            if is_singleton:
+                instance = self.__singletons.get(base_key)
+                if instance is None:
+                    instance = self.__resolve_binding(binding_resolver, make_args)
+                    self.__singletons[base_key] = instance
+            else:
                 instance = self.__resolve_binding(binding_resolver, make_args)
-                self.__singletons[base_key] = instance
-        else:
-            instance = self.__resolve_binding(binding_resolver, make_args)
 
-        return instance
+            return instance
+
+        return self.__load_module_if_exists(base_key, make_args)
 
     def bind(self, key: str, binding_resolver: Any) -> None:
         base_key = self.__get_base_key(key)
@@ -54,7 +55,15 @@ class Container:
         return f"{key.__module__}.{key.__name__}"
 
     def __load_module_if_exists(self, base_key: str, make_args: Dict[str, Any]) -> Any:
-        module_path, class_name = base_key.rsplit(".", 1)
+        splitted = [spl for spl in base_key.rsplit(".", 1) if len(spl)]
+
+        if len(splitted) == 0:
+            raise Exception(f"Unknown Class")
+
+        if len(splitted) == 1:
+            raise Exception(f"Class {splitted[0]} does not exist")
+
+        module_path, class_name = splitted
 
         try:
             module = import_module(module_path)
@@ -78,16 +87,10 @@ class Container:
         raise Exception("Binding Resolution Exception")
 
     def __get_dependencies(self, class_info):
-        def get_instance(info):
-            module = import_module(info.__module__, package=None)
-            module_class = getattr(module, info.__name__)
-
-            return self.make(module_class)
-
         args_info = inspect.getfullargspec(class_info)
 
         return [
-            get_instance(args_info.annotations[arg])
+            self.make(args_info.annotations[arg])
             for arg in args_info.args
             if arg != "self"
         ]
