@@ -13,9 +13,6 @@ def response_handler(environ: dict, start_response: ResponseHandler):
     application.bind("start_time", time())
     application.bind("environ", environ)
 
-    for provider in application.providers:
-        provider.boot()
-
     _ = application.resolve("request")
     response = application.resolve("response")
 

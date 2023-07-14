@@ -42,8 +42,13 @@ class Application(Container):
     def register_providers(self):
         for provider_class in self.__config["providers"]:
             provider = provider_class(self)
-            provider.register()
             self.providers.append(provider)
+
+        for provider in self.providers:
+            provider.register()
+
+        for provider in self.providers:
+            provider.boot()
 
         return self
 
