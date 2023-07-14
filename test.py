@@ -1,11 +1,7 @@
 from Illuminate.Support.Foundation.Container import Container
 
 
-class Application(Container):
-    pass
-
-
-app = Application()
+app = Container()
 
 
 class World:
