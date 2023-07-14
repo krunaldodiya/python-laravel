@@ -9,26 +9,55 @@ class Container:
         self.__singletons: Dict[str, Any] = {}
 
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
-        base_key = self.__get_base_key(key)
+        try:
+            if make_args:
+                return key(**make_args)
 
-        binding = self.__bindings.get(base_key)
+            base_key = self.__get_base_key(key)
 
-        if binding:
-            is_singleton = binding["is_singleton"]
+            binding = self.__bindings.get(base_key)
 
-            binding_resolver = binding["binding_resolver"]
+            if binding:
+                is_singleton = binding["is_singleton"]
 
-            if is_singleton:
-                instance = self.__singletons.get(base_key)
-                if instance is None:
+                binding_resolver = binding["binding_resolver"]
+
+                if is_singleton:
+                    instance = self.__singletons.get(base_key)
+                    if instance is None:
+                        instance = self.__resolve_binding(binding_resolver, make_args)
+                        self.__singletons[base_key] = instance
+                else:
                     instance = self.__resolve_binding(binding_resolver, make_args)
-                    self.__singletons[base_key] = instance
-            else:
-                instance = self.__resolve_binding(binding_resolver, make_args)
 
-            return instance
+                return instance
 
-        return self.__load_module_if_exists(base_key, make_args)
+            module = self.__check_module_exists(base_key)
+
+            return self.__load_module(module, {})
+        except Exception as e:
+            print("make", e)
+            exit()
+
+    def __check_module_exists(self, base_key: str) -> None:
+        try:
+            print(base_key)
+
+            splitted = [spl for spl in base_key.rsplit(".", 1) if len(spl)]
+
+            if len(splitted) == 0:
+                raise Exception(f"Class does not exist")
+
+            if len(splitted) == 1:
+                raise Exception(f"Class does not exist")
+
+            module_path, class_name = splitted
+
+            module = import_module(module_path)
+
+            return getattr(module, class_name)
+        except Exception:
+            raise Exception("Invalid arguments")
 
     def bind(self, key: str, binding_resolver: Any) -> None:
         base_key = self.__get_base_key(key)
@@ -54,24 +83,11 @@ class Container:
 
         return f"{key.__module__}.{key.__name__}"
 
-    def __load_module_if_exists(self, base_key: str, make_args: Dict[str, Any]) -> Any:
-        splitted = [spl for spl in base_key.rsplit(".", 1) if len(spl)]
-
-        if len(splitted) == 0:
-            raise Exception(f"Unknown Class")
-
-        if len(splitted) == 1:
-            raise Exception(f"Class {splitted[0]} does not exist")
-
-        module_path, class_name = splitted
-
+    def __load_module(self, binding_resolver: Any, make_args: Dict[str, Any]) -> Any:
         try:
-            module = import_module(module_path)
-            binding_resolver = getattr(module, class_name)
-
             return self.__resolve_binding(binding_resolver, make_args)
-        except (ModuleNotFoundError, AttributeError):
-            raise Exception(f"Class {class_name} does not exist")
+        except Exception:
+            raise Exception(f"Class does not exist")
 
     def __resolve_binding(
         self, binding_resolver: Any, make_args: Dict[str, Any]
@@ -87,10 +103,14 @@ class Container:
         raise Exception("Binding Resolution Exception")
 
     def __get_dependencies(self, class_info):
-        args_info = inspect.getfullargspec(class_info)
+        try:
+            args_info = inspect.getfullargspec(class_info)
 
-        return [
-            self.make(args_info.annotations[arg])
-            for arg in args_info.args
-            if arg != "self"
-        ]
+            return [
+                self.make(args_info.annotations[arg])
+                for arg in args_info.args
+                if arg != "self"
+            ]
+        except Exception as e:
+            print("__get_dependencies", e)
+            exit()

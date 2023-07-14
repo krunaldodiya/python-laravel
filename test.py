@@ -1,3 +1,6 @@
+# from container import Container
+
+
 from Illuminate.Support.Foundation.Container import Container
 
 
@@ -10,7 +13,8 @@ class World:
 
 
 class Hello:
-    def __init__(self, world: World) -> None:
+    def __init__(self, name: str, world: World) -> None:
+        self.name = name
         self.world = world
 
 
@@ -19,6 +23,6 @@ class Test:
         self.hello = hello
 
 
-test = app.make(Test, {"hello": app.make(Hello)})
+test = app.make(Test)
 
-print(test.hello.world.greet)
+print(test.name)
