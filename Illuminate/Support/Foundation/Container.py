@@ -13,9 +13,7 @@ class Container:
         binding = self.__bindings.get(base_key)
 
         if not binding:
-            test = self.__load_module_if_exists(base_key, make_args)
-            print(test)
-            exit()
+            return self.__load_module_if_exists(base_key, make_args)
 
         is_singleton = binding["is_singleton"]
 

@@ -25,4 +25,3 @@ class Test:
 
 
 test = app.make(Test, {"hello": app.make(Hello)})
-print(test)
