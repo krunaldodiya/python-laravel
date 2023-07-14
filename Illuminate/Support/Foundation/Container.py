@@ -56,7 +56,7 @@ class Container(ABC):
             binding = self.__bindings.get(base_key, None)
 
             if not binding:
-                return self.__check_module_exists(base_key)
+                return self.__check_module_exists(base_key, make_args)
 
             is_singleton = binding["is_singleton"]
 
@@ -89,16 +89,16 @@ class Container(ABC):
         except Exception as e:
             raise Exception(e)
 
-    def __check_module_exists(self, base_key: str):
+    def __check_module_exists(self, base_key: str, make_args: Dict[str, Any]):
         try:
             splitted = base_key.split(".")
             module_path, class_name = ".".join(splitted[:-1]), splitted[-1]
             module = import_module(module_path, package=None)
-            class_object = getattr(module, class_name)
+            binding_resolver = getattr(module, class_name)
 
-            return class_object()
+            return binding_resolver(**make_args)
         except ModuleNotFoundError:
-            raise Exception("Binding Resolution Exception")
+            raise Exception(f"Class {class_name} does not exists")
 
     def __is_function(self, key):
         return inspect.isfunction(key)
