@@ -2,22 +2,12 @@ from typing import Iterator
 
 
 from Illuminate.Support.Foundation.Container import Container
-
 from Illuminate.Support.Foundation.Kernel import Kernel
-
-from Illuminate.Support.Foundation.Providers.FrameworkServiceProvider import (
-    FrameworkServiceProvider,
-)
-
-from Illuminate.Support.Foundation.Providers.RouteServiceProvider import (
-    RouteServiceProvider,
-)
-
-from Illuminate.Support.Foundation.Providers.ViewServiceProvider import (
-    ViewServiceProvider,
-)
-
 from Illuminate.Support.Foundation.response_handler import ResponseHandler
+
+from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
+from Illuminate.Providers.RouteServiceProvider import RouteServiceProvider
+from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
 
 PROVIDERS = [
     FrameworkServiceProvider,
