@@ -32,7 +32,7 @@ class Backup:
 
     def get_dependencies(self, class_info):
         def get_instance(info):
-            module = import_module(info.__module__)
+            module = import_module(info.__module__, package=None)
             module_class = getattr(module, info.__name__)
 
             return create_instance(module_class)
@@ -53,7 +53,7 @@ class Backup:
         try:
             return self.resolve(matched_route["module_path"])
         except:
-            module = import_module(matched_route["module_path"])
+            module = import_module(matched_route["module_path"], package=None)
 
             module_class = getattr(module, matched_route["module_name"])
 

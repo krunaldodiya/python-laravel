@@ -1,6 +1,7 @@
 from abc import ABC
+from importlib import import_module
 import inspect
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 
 class Container(ABC):
@@ -55,7 +56,7 @@ class Container(ABC):
             binding = self.__bindings.get(base_key, None)
 
             if not binding:
-                raise Exception("No binding found for.", base_key)
+                return self.__check_module_exists(base_key)
 
             is_singleton = binding["is_singleton"]
 
@@ -88,6 +89,17 @@ class Container(ABC):
         except Exception as e:
             raise Exception(e)
 
+    def __check_module_exists(self, base_key: str):
+        try:
+            splitted = base_key.split(".")
+            module_path, class_name = ".".join(splitted[:-1]), splitted[-1]
+            module = import_module(module_path, package=None)
+            class_object = getattr(module, class_name)
+
+            return class_object()
+        except ModuleNotFoundError:
+            raise Exception("Binding Resolution Exception")
+
     def __is_function(self, key):
         return inspect.isfunction(key)
 
@@ -98,4 +110,4 @@ class Container(ABC):
         return isinstance(key, str)
 
     def __get_base_key(self, key):
-        return key if self.__is_string(key) else key.__module__ + key.__name__
+        return key if self.__is_string(key) else f"{key.__module__}.{key.__name__}"

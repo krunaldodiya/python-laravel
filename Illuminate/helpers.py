@@ -1,4 +1,3 @@
-from importlib import import_module
 from pathlib import Path
 
 
@@ -14,9 +13,3 @@ def config(key=None):
 
     if not file_path.is_file():
         raise Exception("file not found")
-
-    spec = importlib.util.spec_from_file_location("module_name", file_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-
-    return module.data
