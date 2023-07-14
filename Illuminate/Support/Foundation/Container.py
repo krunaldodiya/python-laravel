@@ -1,8 +1,9 @@
+from abc import ABC
 import inspect
 from typing import Any, Dict, List
 
 
-class Container:
+class Container(ABC):
     def __init__(self) -> None:
         self.__bindings = {}
         self.__singletons = {}
@@ -15,9 +16,7 @@ class Container:
     def singletons(self):
         return self.__singletons
 
-    def make(self, key: str, args: List[Any] = []):
-        make_args = args if args else []
-
+    def make(self, key: str, make_args: Dict[str, Any] = {}):
         return self.__resolve(key, make_args)
 
     def bind(self, key: str, binding_resolver):
@@ -49,7 +48,7 @@ class Container:
         except Exception as e:
             raise Exception(e)
 
-    def __resolve(self, key: str, make_args: List[Any]):
+    def __resolve(self, key: str, make_args: Dict[str, Any] = {}):
         try:
             base_key = self.__get_base_key(key)
 
@@ -75,7 +74,7 @@ class Container:
         except Exception as e:
             raise Exception(e)
 
-    def __resolve_binding(self, binding: Dict[str, Any], make_args: List[Any]):
+    def __resolve_binding(self, binding: Dict[str, Any], make_args: Dict[str, Any]):
         try:
             binding_resolver = binding["binding_resolver"]
 
@@ -83,9 +82,9 @@ class Container:
                 return binding_resolver()
 
             if self.__is_class(binding_resolver):
-                return binding_resolver(*make_args)
+                return binding_resolver(**make_args)
 
-            raise Exception("done")
+            raise Exception("Binding Resolution Exception")
         except Exception as e:
             raise Exception(e)
 

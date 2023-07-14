@@ -10,6 +10,6 @@ class Test:
 
 app.singleton("test", Test)
 
-test = app.make("test", [{"name": "krunal"}])
+test = app.make("test", {"name": "krunal"})
 
 print(test.name)
