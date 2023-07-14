@@ -1,113 +1,95 @@
-from abc import ABC
 from importlib import import_module
 import inspect
 from typing import Any, Dict
 
 
-class Container(ABC):
+class Container:
     def __init__(self) -> None:
-        self.__bindings = {}
-        self.__singletons = {}
+        self.__bindings: Dict[str, Dict[str, Any]] = {}
+        self.__singletons: Dict[str, Any] = {}
 
-    @property
-    def bindings(self):
-        return self.__bindings
+    def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
+        base_key = self.__get_base_key(key)
+        binding = self.__bindings.get(base_key)
 
-    @property
-    def singletons(self):
-        return self.__singletons
+        if not binding:
+            test = self.__load_module_if_exists(base_key, make_args)
+            print(test)
+            exit()
 
-    def make(self, key: str, make_args: Dict[str, Any] = {}):
-        return self.__resolve(key, make_args)
+        is_singleton = binding["is_singleton"]
 
-    def bind(self, key: str, binding_resolver):
-        self.__set_binding(
-            key,
-            binding_resolver,
-            False,
-        )
+        binding_resolver = binding["binding_resolver"]
 
-    def singleton(self, key: str, binding_resolver):
-        self.__set_binding(
-            key,
-            binding_resolver,
-            True,
-        )
+        if is_singleton:
+            instance = self.__singletons.get(base_key)
+            if instance is None:
+                instance = self.__resolve_binding(binding_resolver, make_args)
+                self.__singletons[base_key] = instance
+        else:
+            instance = self.__resolve_binding(binding_resolver, make_args)
 
-    def __set_binding(self, key, binding_resolver, singleton):
+        return instance
+
+    def bind(self, key: str, binding_resolver: Any) -> None:
+        base_key = self.__get_base_key(key)
+
+        self.__bindings[base_key] = {
+            "base_key": base_key,
+            "binding_resolver": binding_resolver,
+            "is_singleton": False,
+        }
+
+    def singleton(self, key: str, binding_resolver: Any) -> None:
+        base_key = self.__get_base_key(key)
+
+        self.__bindings[base_key] = {
+            "base_key": base_key,
+            "binding_resolver": binding_resolver,
+            "is_singleton": True,
+        }
+
+    def __get_base_key(self, key: Any) -> str:
+        if isinstance(key, str):
+            return key
+
+        return f"{key.__module__}.{key.__name__}"
+
+    def __load_module_if_exists(self, base_key: str, make_args: Dict[str, Any]) -> Any:
+        module_path, class_name = base_key.rsplit(".", 1)
+
         try:
-            if not (isinstance(key, str) or self.__is_class(key)):
-                raise Exception("key should be string or class object")
-
-            base_key = self.__get_base_key(key)
-
-            self.__bindings[base_key] = {
-                "base_key": base_key,
-                "binding_resolver": binding_resolver,
-                "is_singleton": singleton,
-            }
-        except Exception as e:
-            raise Exception(e)
-
-    def __resolve(self, key: str, make_args: Dict[str, Any] = {}):
-        try:
-            base_key = self.__get_base_key(key)
-
-            binding = self.__bindings.get(base_key, None)
-
-            if not binding:
-                return self.__check_module_exists(base_key, make_args)
-
-            is_singleton = binding["is_singleton"]
-
-            resolved_instance = None
-
-            if is_singleton:
-                try:
-                    resolved_instance = self.__singletons[base_key]
-                except KeyError:
-                    resolved_instance = self.__resolve_binding(binding, make_args)
-                    self.__singletons[base_key] = resolved_instance
-            else:
-                resolved_instance = self.__resolve_binding(binding, make_args)
-
-            return resolved_instance
-        except Exception as e:
-            raise Exception(e)
-
-    def __resolve_binding(self, binding: Dict[str, Any], make_args: Dict[str, Any]):
-        try:
-            binding_resolver = binding["binding_resolver"]
-
-            if self.__is_function(binding_resolver):
-                return binding_resolver()
-
-            if self.__is_class(binding_resolver):
-                return binding_resolver(**make_args)
-
-            raise Exception("Binding Resolution Exception")
-        except Exception as e:
-            raise Exception(e)
-
-    def __check_module_exists(self, base_key: str, make_args: Dict[str, Any]):
-        try:
-            splitted = base_key.split(".")
-            module_path, class_name = ".".join(splitted[:-1]), splitted[-1]
-            module = import_module(module_path, package=None)
+            module = import_module(module_path)
             binding_resolver = getattr(module, class_name)
 
-            return binding_resolver(**make_args)
-        except ModuleNotFoundError:
-            raise Exception(f"Class {class_name} does not exists")
+            return self.__resolve_binding(binding_resolver, make_args)
+        except (ModuleNotFoundError, AttributeError):
+            raise Exception(f"Class {class_name} does not exist")
 
-    def __is_function(self, key):
-        return inspect.isfunction(key)
+    def __resolve_binding(
+        self, binding_resolver: Any, make_args: Dict[str, Any]
+    ) -> Any:
+        if callable(binding_resolver):
+            if inspect.isclass(binding_resolver):
+                dependencies = self.__get_dependencies(binding_resolver)
 
-    def __is_class(self, key):
-        return isinstance(key, type) and inspect.isclass(key)
+                return binding_resolver(*dependencies, **make_args)
 
-    def __is_string(self, key):
-        return isinstance(key, str)
+            return binding_resolver()
 
-    def __get_base_key(self, key):
-        return key if self.__is_string(key) else f"{key.__module__}.{key.__name__}"
+        raise Exception("Binding Resolution Exception")
+
+    def __get_dependencies(self, class_info):
+        def get_instance(info):
+            module = import_module(info.__module__, package=None)
+            module_class = getattr(module, info.__name__)
+
+            return self.make(module_class)
+
+        args_info = inspect.getfullargspec(class_info)
+
+        return [
+            get_instance(args_info.annotations[arg])
+            for arg in args_info.args
+            if arg != "self"
+        ]

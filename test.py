@@ -1,12 +1,21 @@
-from Illuminate.Support.Foundation.Application import Application
-from solar import Solar
+from Illuminate.Support.Foundation.Container import Container
+
+
+class Application(Container):
+    pass
+
 
 app = Application()
 
 
-class Hello:
+class World:
     def __init__(self) -> None:
-        self.name = "hello"
+        self.name = "hello world"
+
+
+class Hello:
+    def __init__(self, world: World) -> None:
+        self.world = world
 
 
 class Test:
@@ -15,8 +24,5 @@ class Test:
         self.hello = hello
 
 
-app.singleton("test", lambda: Test("krunal", Hello()))
-
-solar = app.make(Solar)
-
-print(solar)
+test = app.make(Test, {"hello": app.make(Hello)})
+print(test)
