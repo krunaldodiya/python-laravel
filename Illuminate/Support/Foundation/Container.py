@@ -1,7 +1,32 @@
 class Container:
     def __init__(self) -> None:
-        self.bindings = {}
-        self.singletons = {}
+        self.__bindings = {}
+        self.__singletons = {}
+
+    @property
+    def bindings(self):
+        return self.__bindings
+
+    @property
+    def singletons(self):
+        return self.__singletons
+
+    def make(self, key: str):
+        return self.resolve(key)
+
+    def bind(self, key: str, binding_resolver):
+        self.set_binding(
+            key,
+            binding_resolver,
+            False,
+        )
+
+    def singleton(self, key: str, binding_resolver):
+        self.set_binding(
+            key,
+            binding_resolver,
+            True,
+        )
 
     def resolve(self, key: str):
         try:
@@ -28,14 +53,7 @@ class Container:
             raise Exception(e)
 
     def set_binding(self, key, binding_resolver, singleton):
-        self.bindings[key] = {
+        self.__bindings[key] = {
             "binding_resolver": binding_resolver,
             "is_singleton": singleton,
         }
-
-    def set_singleton(self, key, binding_resolver, singleton):
-        self.set_binding(
-            key=key,
-            binding_resolver=binding_resolver,
-            singleton=singleton,
-        )

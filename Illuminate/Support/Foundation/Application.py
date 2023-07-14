@@ -16,9 +16,9 @@ PROVIDERS = [
 ]
 
 
-class Application:
+class Application(Container):
     def __init__(self) -> None:
-        self.__container: Container = Container()
+        super().__init__()
 
         self.__response_handler: ResponseHandler
 
@@ -29,26 +29,6 @@ class Application:
     @property
     def providers(self):
         return self.__providers
-
-    def make(self, key: str):
-        return self.__container.resolve(key)
-
-    def resolve(self, key: str):
-        return self.__container.resolve(key)
-
-    def bind(self, key: str, binding_resolver):
-        self.__container.set_binding(
-            key,
-            binding_resolver,
-            False,
-        )
-
-    def singleton(self, key: str, binding_resolver):
-        self.__container.set_singleton(
-            key,
-            binding_resolver,
-            True,
-        )
 
     def register_kernel(self):
         kernel = Kernel(self)
