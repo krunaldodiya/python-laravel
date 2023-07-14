@@ -4,40 +4,18 @@ from Illuminate.template import HtmlResponse
 
 
 class HttpResponse:
-    def __init__(self) -> None:
+    def __init__(self, app) -> None:
+        self.__app = app
+
         self.__response_body = ""
         self.__status = "200 OK"
         self.__response_headers = {"Content-type": "text/html"}
 
-    @property
-    def response_headers(self):
-        return [(header[0], header[1]) for header in self.__response_headers.items()]
+    def get_status_code(self):
+        return "200 OK"
 
-    @property
-    def response_body(self):
-        return self.__response_body
+    def get_headers(self):
+        return [("Content-type", "text/html")]
 
-    @property
-    def status(self):
-        return self.__status
-
-    def to_json(self):
-        return json.dumps(self.response_body).encode("utf-8")
-
-    def make(self, response_body, status):
-        if type(response_body) == dict or type(response_body) == list:
-            self.__response_body = json.dumps(response_body).encode("utf-8")
-            self.__status = status
-            self.__response_headers = {"Content-type": "application/json"}
-
-        if type(response_body) == str:
-            self.__response_body = response_body.encode("utf-8")
-            self.__status = status
-            self.__response_headers = {"Content-type": "text/plain"}
-
-        if type(response_body) == HtmlResponse:
-            self.__response_body = response_body.data.encode("utf-8")
-            self.__status = status
-            self.__response_headers = {"Content-type": "text/html"}
-
-        return self
+    def get_response_content(self):
+        return "test".encode("utf-8")

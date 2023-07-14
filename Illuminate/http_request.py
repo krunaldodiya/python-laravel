@@ -2,7 +2,9 @@ from urllib.parse import parse_qs
 
 
 class HttpRequest:
-    def __init__(self) -> None:
+    def __init__(self, app) -> None:
+        self.__app = app
+
         self.http_host = None
         self.server_name = None
         self.server_port = None

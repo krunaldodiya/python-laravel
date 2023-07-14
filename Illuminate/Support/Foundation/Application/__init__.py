@@ -2,11 +2,28 @@ from typing import Iterator
 
 
 from Illuminate.Support.Foundation.Container import Container
+
 from Illuminate.Support.Foundation.Kernel import Kernel
+
+from Illuminate.Support.Foundation.Providers.FrameworkServiceProvider import (
+    FrameworkServiceProvider,
+)
+
+from Illuminate.Support.Foundation.Providers.RouteServiceProvider import (
+    RouteServiceProvider,
+)
+
+from Illuminate.Support.Foundation.Providers.ViewServiceProvider import (
+    ViewServiceProvider,
+)
+
 from Illuminate.Support.Foundation.response_handler import ResponseHandler
-from Illuminate.http_request import HttpRequest
-from Illuminate.http_response import HttpResponse
-from Illuminate.template import Template
+
+PROVIDERS = [
+    FrameworkServiceProvider,
+    RouteServiceProvider,
+    ViewServiceProvider,
+]
 
 
 class Application:
@@ -14,6 +31,14 @@ class Application:
         self.__container: Container = Container()
 
         self.__response_handler: ResponseHandler
+
+        self.__providers = []
+
+        self.__config = {"providers": PROVIDERS}
+
+    @property
+    def providers(self):
+        return self.__providers
 
     def make(self, key: str):
         return self.__container.resolve(key)
@@ -45,9 +70,10 @@ class Application:
         return self
 
     def register_providers(self):
-        self.singleton("request", lambda: HttpRequest())
-        self.singleton("response", lambda: HttpResponse())
-        self.singleton("view", lambda: Template())
+        for provider_class in self.__config["providers"]:
+            provider = provider_class(self)
+            provider.register()
+            self.providers.append(provider)
 
         return self
 

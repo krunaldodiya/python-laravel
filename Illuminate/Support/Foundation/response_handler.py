@@ -1,3 +1,4 @@
+from datetime import time
 from typing import Callable, List, Tuple
 from Illuminate.file_loader import load_files
 from Illuminate.http_response import HttpResponse
@@ -9,18 +10,18 @@ ResponseHandler = Callable[[str, List[Tuple]], None]
 def response_handler(environ: dict, start_response: ResponseHandler):
     from wsgi import application
 
+    application.bind("start_time", time())
+    application.bind("environ", environ)
+
+    for provider in application.providers:
+        provider.boot()
+
+    _ = application.resolve("request")
     response = application.resolve("response")
 
-    print(response)
+    start_response(
+        response.get_status_code(),
+        response.get_headers(),
+    )
 
-    # request = self.resolve("request")
-
-    # load_files("routes")
-
-    # request.initialize(environ)
-
-    # http_response: HttpResponse = self.make_response()
-
-    # start_response(http_response.status, http_response.response_headers)
-
-    # return [http_response.response_body]
+    return iter([response.get_response_content()])

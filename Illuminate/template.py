@@ -9,7 +9,8 @@ class HtmlResponse:
 
 
 class Template:
-    def __init__(self) -> None:
+    def __init__(self, app) -> None:
+        self.__app = app
         self.env = Environment(loader=FileSystemLoader("resources/views"))
 
     def make(self, file, args={}):
