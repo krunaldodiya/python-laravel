@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from importlib import import_module
 import inspect
 import re
@@ -16,11 +17,32 @@ class BindingResolutionException(Exception):
     pass
 
 
-class Container:
+class Container(ABC):
     def __init__(self) -> None:
         self.__bindings: Dict[str, Dict[str, Any]] = {}
         self.__singletons: Dict[str, Any] = {}
 
+    @abstractmethod
+    def bind(self, key: str, binding_resolver: Any) -> None:
+        base_key = self.__get_base_key(key)
+
+        self.__bindings[base_key] = {
+            "base_key": base_key,
+            "binding_resolver": binding_resolver,
+            "is_singleton": False,
+        }
+
+    @abstractmethod
+    def singleton(self, key: str, binding_resolver: Any) -> None:
+        base_key = self.__get_base_key(key)
+
+        self.__bindings[base_key] = {
+            "base_key": base_key,
+            "binding_resolver": binding_resolver,
+            "is_singleton": True,
+        }
+
+    @abstractmethod
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
             base_key = self.__get_base_key(key)
@@ -63,24 +85,6 @@ class Container:
         module = import_module(module_path)
 
         return getattr(module, class_name)
-
-    def bind(self, key: str, binding_resolver: Any) -> None:
-        base_key = self.__get_base_key(key)
-
-        self.__bindings[base_key] = {
-            "base_key": base_key,
-            "binding_resolver": binding_resolver,
-            "is_singleton": False,
-        }
-
-    def singleton(self, key: str, binding_resolver: Any) -> None:
-        base_key = self.__get_base_key(key)
-
-        self.__bindings[base_key] = {
-            "base_key": base_key,
-            "binding_resolver": binding_resolver,
-            "is_singleton": True,
-        }
 
     def __get_base_key(self, key: Any) -> str:
         if isinstance(key, str):

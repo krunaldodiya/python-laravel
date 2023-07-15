@@ -1,38 +1,33 @@
-# from container import Container
-
-
-import inspect
-import random
+from typing import Any
 from Illuminate.Support.Foundation.Container import Container
 
 
-app = Container()
+class Application(Container):
+    def bind(self, *args, **kwargs) -> None:
+        return super().bind(*args, **kwargs)
 
+    def singleton(self, *args, **kwargs) -> None:
+        return super().singleton(*args, **kwargs)
 
-class World:
-    def __init__(self) -> None:
-        self.greet = "hello world"
+    def make(self, *args, **kwargs) -> Any:
+        return super().make(*args, **kwargs)
 
 
 class Hello:
-    def __init__(self, name: str, world: World) -> None:
-        self.name = name
-        self.world = world
+    pass
 
 
-class Test:
-    def __init__(self, hello: Hello) -> None:
-        self.hello = hello
+class Router:
+    pass
 
 
-class Singleton:
-    def __init__(self) -> None:
-        self.random = random.randint(0, 100)
+app = Application()
 
+# app.bind("router", Router)
+app.bind("router", lambda: Router())
 
-app.bind(Hello, lambda: Hello("krunal", app.make(World)))
+hello = app.make(Hello)
+router = app.make("router")
 
-s1 = app.make(Singleton)
-s2 = app.make(Singleton)
-
-print(s1 == s2)
+print(hello)
+print(router)

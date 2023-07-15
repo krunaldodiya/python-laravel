@@ -3,6 +3,6 @@ class Facade(type):
         from wsgi import application
 
         facade_accessor = cls.get_facade_accessor()
-        binding = application.resolve(facade_accessor)
+        binding = application.make(facade_accessor)
 
         return getattr(binding, attribute)

@@ -1,4 +1,4 @@
-from typing import Iterator
+from typing import Any, Iterator
 
 
 from Illuminate.Support.Foundation.Container import Container
@@ -57,3 +57,12 @@ class Application(Container):
 
     def __call__(self, *args, **kwargs) -> Iterator:
         return self.__response_handler(*args, **kwargs)
+
+    def bind(self, *args, **kwargs) -> None:
+        return super().bind(*args, **kwargs)
+
+    def singleton(self, *args, **kwargs) -> None:
+        return super().singleton(*args, **kwargs)
+
+    def make(self, *args, **kwargs) -> Any:
+        return super().make(*args, **kwargs)

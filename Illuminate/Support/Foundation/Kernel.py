@@ -1,6 +1,6 @@
 from Illuminate.Environment.LoadEnvironment import LoadEnvironment
 from Illuminate.Support.Foundation.response_handler import response_handler
-from Illuminate.router import Router
+from Illuminate.Routing.Router import Router
 
 
 class Kernel:

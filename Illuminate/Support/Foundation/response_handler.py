@@ -13,8 +13,8 @@ def response_handler(environ: dict, start_response: ResponseHandler):
     application.bind("start_time", time())
     application.bind("environ", environ)
 
-    _ = application.resolve("request")
-    response = application.resolve("response")
+    _ = application.make("request")
+    response = application.make("response")
 
     start_response(
         response.get_status_code(),
