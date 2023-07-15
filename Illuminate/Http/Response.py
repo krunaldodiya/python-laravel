@@ -14,3 +14,6 @@ class Response:
 
     def get_response_content(self):
         return "test".encode("utf-8")
+
+    def send(self):
+        print("sending response")

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Type
 from Illuminate.Support.ServiceProvider import ServiceProvider
 
 if TYPE_CHECKING:
-    from Illuminate.Support.Foundation.Application import Application
+    from Illuminate.Foundation.Application import Application
 
 
 class EventServiceProvider(ServiceProvider):

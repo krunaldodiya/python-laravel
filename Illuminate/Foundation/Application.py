@@ -4,8 +4,8 @@ from Illuminate.Log.LogServiceProvider import LogServiceProvider
 from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
 
-from Illuminate.Support.Foundation.Container import Container
-from Illuminate.Support.Foundation.response_handler import ResponseHandler
+from Illuminate.Container.Container import Container
+from Illuminate.Foundation.response_handler import ResponseHandler
 
 from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
 from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider

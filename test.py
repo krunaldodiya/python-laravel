@@ -1,5 +1,5 @@
 from typing import Any
-from Illuminate.Support.Foundation.Container import Container
+from Illuminate.Container.Container import Container
 
 
 class Application(Container):

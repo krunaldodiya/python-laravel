@@ -1,3 +1,10 @@
-from Illuminate.Support.Foundation.Application import Application
+from Illuminate.Contracts.Http.Kernel import Kernel
+from app.Http.Kernel import Kernel as HttpKernel
 
-application = Application()
+from bootstrap.app import application
+
+kernel: HttpKernel = application.make(
+    Kernel, {"app": application, "router": application.make("router")}
+)
+
+kernel.handle(application.make("request")).send()
