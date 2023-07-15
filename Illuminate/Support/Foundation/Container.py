@@ -1,6 +1,23 @@
 from importlib import import_module
 import inspect
+import re
 from typing import Any, Dict
+
+
+class AttributeNotFound(Exception):
+    pass
+
+
+class ClassNotFound(Exception):
+    pass
+
+
+class BindingNotFound(Exception):
+    pass
+
+
+class BindingResolutionException(Exception):
+    pass
 
 
 class Container:
@@ -10,54 +27,52 @@ class Container:
 
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            if make_args:
-                return key(**make_args)
-
             base_key = self.__get_base_key(key)
-
-            binding = self.__bindings.get(base_key)
-
-            if binding:
-                is_singleton = binding["is_singleton"]
-
-                binding_resolver = binding["binding_resolver"]
-
-                if is_singleton:
-                    instance = self.__singletons.get(base_key)
-                    if instance is None:
-                        instance = self.__resolve_binding(binding_resolver, make_args)
-                        self.__singletons[base_key] = instance
-                else:
-                    instance = self.__resolve_binding(binding_resolver, make_args)
-
-                return instance
-
-            module = self.__check_module_exists(base_key)
-
-            return self.__load_module(module, {})
+            return self.__get_binding_if_exists(base_key, make_args)
+        except BindingNotFound:
+            binding_resolver = self.__get_class_if_exists(base_key)
+            return self.__resolve_binding(binding_resolver, make_args)
         except Exception as e:
-            print("make", e)
-            exit()
+            raise Exception(e)
 
-    def __check_module_exists(self, base_key: str) -> None:
+    def __get_binding_if_exists(self, base_key: str, make_args: Dict[str, Any] = {}):
+        binding = self.__bindings.get(base_key)
+
+        if not binding:
+            raise BindingNotFound("Binding not found.")
+
+        is_singleton = binding["is_singleton"]
+
+        binding_resolver = binding["binding_resolver"]
+
+        if is_singleton:
+            instance = self.__singletons.get(base_key)
+
+            if instance is None:
+                instance = self.__resolve_binding(binding_resolver, make_args)
+                self.__singletons[base_key] = instance
+        else:
+            instance = self.__resolve_binding(binding_resolver, make_args)
+
+        return instance
+
+    def __validate_class_string(self, base_key: str):
+        return bool(re.match(r"^[\w]+\.[A-Z][\w]+$", base_key))
+
+    def __get_class_if_exists(self, base_key: str) -> None:
         try:
-            print(base_key)
+            valid_class_path = self.__validate_class_string(base_key)
 
-            splitted = [spl for spl in base_key.rsplit(".", 1) if len(spl)]
+            if not valid_class_path:
+                raise AttributeNotFound("Attribute not found.")
 
-            if len(splitted) == 0:
-                raise Exception(f"Class does not exist")
-
-            if len(splitted) == 1:
-                raise Exception(f"Class does not exist")
-
-            module_path, class_name = splitted
+            module_path, class_name = base_key.rsplit(".", 1)
 
             module = import_module(module_path)
 
             return getattr(module, class_name)
-        except Exception:
-            raise Exception("Invalid arguments")
+        except Exception as e:
+            raise Exception(e)
 
     def bind(self, key: str, binding_resolver: Any) -> None:
         base_key = self.__get_base_key(key)
@@ -83,15 +98,12 @@ class Container:
 
         return f"{key.__module__}.{key.__name__}"
 
-    def __load_module(self, binding_resolver: Any, make_args: Dict[str, Any]) -> Any:
-        try:
-            return self.__resolve_binding(binding_resolver, make_args)
-        except Exception:
-            raise Exception(f"Class does not exist")
-
     def __resolve_binding(
-        self, binding_resolver: Any, make_args: Dict[str, Any]
+        self, binding_resolver: Any, make_args: Dict[str, Any] = {}
     ) -> Any:
+        if make_args:
+            return binding_resolver(**make_args)
+
         if callable(binding_resolver):
             if inspect.isclass(binding_resolver):
                 dependencies = self.__get_dependencies(binding_resolver)
@@ -100,7 +112,7 @@ class Container:
 
             return binding_resolver()
 
-        raise Exception("Binding Resolution Exception")
+        raise BindingResolutionException("Binding Resolution Exception")
 
     def __get_dependencies(self, class_info):
         try:
@@ -112,5 +124,4 @@ class Container:
                 if arg != "self"
             ]
         except Exception as e:
-            print("__get_dependencies", e)
-            exit()
+            raise Exception(e)

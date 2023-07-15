@@ -1,6 +1,7 @@
 # from container import Container
 
 
+import inspect
 from Illuminate.Support.Foundation.Container import Container
 
 
@@ -23,6 +24,8 @@ class Test:
         self.hello = hello
 
 
+# app.bind(Hello, lambda: {"name": "krunal", "world": app.make(World)})
+
 test = app.make(Test)
 
-print(test.name)
+print(test)
