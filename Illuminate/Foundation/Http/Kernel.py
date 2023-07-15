@@ -15,4 +15,4 @@ class Kernel:
         return response
 
     def terminate(self, request: Request, response: Response):
-        print("terminating")
+        return response

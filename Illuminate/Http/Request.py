@@ -13,7 +13,15 @@ class Request:
         self.request_method = None
         self.body = None
 
-    def initialize(self, environ) -> None:
+    def set_params(self, params):
+        self.params = params
+
+    def get(self, param):
+        return self.params.get(param)
+
+    def capture(self):
+        environ = self.__app.environ
+
         self.http_host = environ["HTTP_HOST"]
         self.server_name = environ["SERVER_NAME"]
         self.server_port = environ["SERVER_PORT"]
@@ -28,12 +36,3 @@ class Request:
         )
 
         self.params = {}
-
-    def set_params(self, params):
-        self.params = params
-
-    def get(self, param):
-        return self.params.get(param)
-
-    def capture(self):
-        print(self)

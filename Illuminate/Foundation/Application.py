@@ -1,4 +1,5 @@
-from typing import Any, Iterator
+from typing import Any
+
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
 from Illuminate.Log.LogServiceProvider import LogServiceProvider
 from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
@@ -17,18 +18,27 @@ PROVIDERS = [
 
 
 class Application(Container):
-    def __init__(self, environ, response_handler) -> None:
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.__instance:
+            cls.__instance = super().__new__(cls, *args, **kwargs)
+
+        return cls.__instance
+
+    def __init__(self) -> None:
         super().__init__()
 
         self.__base_path: str = None
 
-        self.__environ: dict = environ
+        self.__environ: dict = None
 
-        self.__response_handler: ResponseHandler = response_handler
+        self.__response_handler: ResponseHandler = None
 
         self.__providers = []
 
         self.__register_base_bindings()
+
         self.__register_base_providers()
 
     @property
@@ -36,8 +46,22 @@ class Application(Container):
         return self.__base_path
 
     @property
+    def environ(self):
+        return self.__environ
+
+    @property
+    def response_handler(self):
+        return self.__response_handler
+
+    @property
     def providers(self):
         return self.__providers
+
+    def set_environ(self, environ):
+        self.__environ = environ
+
+    def set_response_handler(self, response_handler):
+        self.__response_handler = response_handler
 
     def set_base_path(self, base_path):
         self.__base_path = base_path
@@ -62,6 +86,3 @@ class Application(Container):
 
     def make(self, *args, **kwargs) -> Any:
         return super().make(*args, **kwargs)
-
-    def instance(self) -> Any:
-        return self

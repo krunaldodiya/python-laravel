@@ -16,4 +16,4 @@ class Response:
         return "test".encode("utf-8")
 
     def send(self):
-        print("sending response")
+        return ["test".encode("utf-8")]

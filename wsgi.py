@@ -1,21 +1,32 @@
 from importlib import import_module
+from Illuminate.Http.Request import Request
 
-from Illuminate.Foundation.Application import Application
+from Illuminate.Support.Facades.Response import Response
+
+from Illuminate.Contracts.Http.Kernel import Kernel
+
+from app.Http.Kernel import Kernel as HttpKernel
+
+from bootstrap.app import application
 
 
 class App:
-    def __init__(self) -> None:
-        self.__application = None
-
     def __call__(self, environ, start_response):
-        self.__application = Application(environ, start_response)
+        print("test")
 
-        import_module("public.index")
+        application.set_environ(environ)
 
-        return ["test".encode("utf-8")]
+        application.set_response_handler(start_response)
 
-    def get_application(self):
-        return self.__application
+        kernel: HttpKernel = application.make(
+            Kernel, {"app": application, "router": application.make("router")}
+        )
+
+        request: Request = application.make("request")
+
+        response: Response = kernel.handle(request.capture()).send()
+
+        return kernel.terminate(request, response)
 
 
 app = App()
