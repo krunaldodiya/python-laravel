@@ -8,10 +8,6 @@ class AttributeNotFound(Exception):
     pass
 
 
-class ClassNotFound(Exception):
-    pass
-
-
 class BindingNotFound(Exception):
     pass
 
@@ -32,8 +28,6 @@ class Container:
         except BindingNotFound:
             binding_resolver = self.__get_class_if_exists(base_key)
             return self.__resolve_binding(binding_resolver, make_args)
-        except Exception as e:
-            raise Exception(e)
 
     def __get_binding_if_exists(self, base_key: str, make_args: Dict[str, Any] = {}):
         binding = self.__bindings.get(base_key)
@@ -42,7 +36,6 @@ class Container:
             raise BindingNotFound("Binding not found.")
 
         is_singleton = binding["is_singleton"]
-
         binding_resolver = binding["binding_resolver"]
 
         if is_singleton:
@@ -59,20 +52,17 @@ class Container:
     def __validate_class_string(self, base_key: str):
         return bool(re.match(r"^[\w]+\.[A-Z][\w]+$", base_key))
 
-    def __get_class_if_exists(self, base_key: str) -> None:
-        try:
-            valid_class_path = self.__validate_class_string(base_key)
+    def __get_class_if_exists(self, base_key: str) -> Any:
+        valid_class_path = self.__validate_class_string(base_key)
 
-            if not valid_class_path:
-                raise AttributeNotFound("Attribute not found.")
+        if not valid_class_path:
+            raise AttributeNotFound("Attribute not found.")
 
-            module_path, class_name = base_key.rsplit(".", 1)
+        module_path, class_name = base_key.rsplit(".", 1)
 
-            module = import_module(module_path)
+        module = import_module(module_path)
 
-            return getattr(module, class_name)
-        except Exception as e:
-            raise Exception(e)
+        return getattr(module, class_name)
 
     def bind(self, key: str, binding_resolver: Any) -> None:
         base_key = self.__get_base_key(key)
@@ -107,21 +97,17 @@ class Container:
         if callable(binding_resolver):
             if inspect.isclass(binding_resolver):
                 dependencies = self.__get_dependencies(binding_resolver)
-
-                return binding_resolver(*dependencies, **make_args)
+                return binding_resolver(*dependencies)
 
             return binding_resolver()
 
         raise BindingResolutionException("Binding Resolution Exception")
 
     def __get_dependencies(self, class_info):
-        try:
-            args_info = inspect.getfullargspec(class_info)
+        args_info = inspect.getfullargspec(class_info)
 
-            return [
-                self.make(args_info.annotations[arg])
-                for arg in args_info.args
-                if arg != "self"
-            ]
-        except Exception as e:
-            raise Exception(e)
+        return [
+            self.make(args_info.annotations[arg])
+            for arg in args_info.args
+            if arg != "self"
+        ]

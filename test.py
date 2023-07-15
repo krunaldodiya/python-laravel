@@ -2,6 +2,7 @@
 
 
 import inspect
+import random
 from Illuminate.Support.Foundation.Container import Container
 
 
@@ -24,8 +25,14 @@ class Test:
         self.hello = hello
 
 
-# app.bind(Hello, lambda: {"name": "krunal", "world": app.make(World)})
+class Singleton:
+    def __init__(self) -> None:
+        self.random = random.randint(0, 100)
 
-test = app.make(Test)
 
-print(test)
+app.bind(Hello, lambda: Hello("krunal", app.make(World)))
+
+s1 = app.make(Singleton)
+s2 = app.make(Singleton)
+
+print(s1 == s2)
