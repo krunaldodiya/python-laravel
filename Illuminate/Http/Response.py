@@ -1,9 +1,4 @@
-import json
-
-from Illuminate.template import HtmlResponse
-
-
-class HttpResponse:
+class Response:
     def __init__(self, app) -> None:
         self.__app = app
 

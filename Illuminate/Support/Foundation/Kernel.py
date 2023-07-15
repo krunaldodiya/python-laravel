@@ -1,6 +1,5 @@
 from Illuminate.Environment.LoadEnvironment import LoadEnvironment
 from Illuminate.Support.Foundation.response_handler import response_handler
-from Illuminate.Routing.Router import Router
 
 
 class Kernel:
@@ -16,4 +15,3 @@ class Kernel:
 
     def register_framework(self) -> None:
         self.__app.set_response_handler(response_handler)
-        self.__app.singleton("router", lambda: Router())

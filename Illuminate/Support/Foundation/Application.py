@@ -1,56 +1,56 @@
 from typing import Any, Iterator
+from Illuminate.Event.EventServiceProvider import EventServiceProvider
+from Illuminate.Log.LogServiceProvider import LogServiceProvider
+from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
 
 from Illuminate.Support.Foundation.Container import Container
-from Illuminate.Support.Foundation.Kernel import Kernel
 from Illuminate.Support.Foundation.response_handler import ResponseHandler
 
 from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
-from Illuminate.Providers.RouteServiceProvider import RouteServiceProvider
 from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
 
 PROVIDERS = [
     FrameworkServiceProvider,
-    RouteServiceProvider,
     ViewServiceProvider,
 ]
 
 
 class Application(Container):
-    def __init__(self) -> None:
+    def __init__(self, base_path=None) -> None:
         super().__init__()
+
+        self.__base_path: str = None
 
         self.__response_handler: ResponseHandler
 
         self.__providers = []
 
-        self.__config = {"providers": PROVIDERS}
+        if base_path:
+            self.__base_path = base_path
+
+        self.__register_base_bindings()
+        self.__register_base_providers()
+
+    @property
+    def base_path(self):
+        return self.__base_path
 
     @property
     def providers(self):
         return self.__providers
 
-    def register_kernel(self):
-        kernel = Kernel(self)
+    def __register_base_bindings(self):
+        self.bind("app", self)
 
-        self.singleton("kernel", lambda: kernel)
+    def __register_base_providers(self):
+        self.__register_provider(EventServiceProvider(self))
+        self.__register_provider(LogServiceProvider(self))
+        self.__register_provider(RoutingServiceProvider(self))
 
-        kernel.register()
-
-        return self
-
-    def register_providers(self):
-        for provider_class in self.__config["providers"]:
-            provider = provider_class(self)
-            self.providers.append(provider)
-
-        for provider in self.providers:
-            provider.register()
-
-        for provider in self.providers:
-            provider.boot()
-
-        return self
+    def __register_provider(self, provider):
+        self.providers.append(provider)
+        provider.register()
 
     def set_response_handler(self, response_handler: ResponseHandler):
         self.__response_handler = response_handler

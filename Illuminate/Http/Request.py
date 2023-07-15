@@ -1,7 +1,7 @@
 from urllib.parse import parse_qs
 
 
-class HttpRequest:
+class Request:
     def __init__(self, app) -> None:
         self.__app = app
 
