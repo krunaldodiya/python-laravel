@@ -51,6 +51,9 @@ class Container(ABC):
             binding_resolver = self.__get_class_if_exists(base_key)
             return self.__resolve_binding(binding_resolver, make_args)
 
+    def get_bindings(self):
+        return self.__bindings
+
     def __get_binding_if_exists(self, base_key: str, make_args: Dict[str, Any] = {}):
         binding = self.__bindings.get(base_key)
 

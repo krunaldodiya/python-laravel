@@ -17,17 +17,16 @@ PROVIDERS = [
 
 
 class Application(Container):
-    def __init__(self, base_path) -> None:
+    def __init__(self, environ, response_handler) -> None:
         super().__init__()
 
         self.__base_path: str = None
 
-        self.__response_handler: ResponseHandler
+        self.__environ: dict = environ
+
+        self.__response_handler: ResponseHandler = response_handler
 
         self.__providers = []
-
-        if base_path:
-            self.__base_path = base_path
 
         self.__register_base_bindings()
         self.__register_base_providers()
@@ -40,8 +39,11 @@ class Application(Container):
     def providers(self):
         return self.__providers
 
+    def set_base_path(self, base_path):
+        self.__base_path = base_path
+
     def __register_base_bindings(self):
-        self.bind("app", self)
+        self.bind("app", lambda: self)
 
     def __register_base_providers(self):
         self.__register_provider(EventServiceProvider(self))
@@ -52,10 +54,6 @@ class Application(Container):
         self.providers.append(provider)
         provider.register()
 
-    def __call__(self, environ: dict, response_handler: ResponseHandler) -> Iterator:
-        self.make("request").initialize(environ)
-        self.__response_handler = response_handler
-
     def bind(self, *args, **kwargs) -> None:
         return super().bind(*args, **kwargs)
 
@@ -64,3 +62,6 @@ class Application(Container):
 
     def make(self, *args, **kwargs) -> Any:
         return super().make(*args, **kwargs)
+
+    def instance(self) -> Any:
+        return self
