@@ -13,3 +13,6 @@ class Kernel:
         response = self.__app.make("response")
 
         return response
+
+    def terminate(self, request: Request, response: Response):
+        print("terminating")

@@ -17,7 +17,7 @@ PROVIDERS = [
 
 
 class Application(Container):
-    def __init__(self, base_path=None) -> None:
+    def __init__(self, base_path) -> None:
         super().__init__()
 
         self.__base_path: str = None
@@ -52,11 +52,9 @@ class Application(Container):
         self.providers.append(provider)
         provider.register()
 
-    def set_response_handler(self, response_handler: ResponseHandler):
+    def __call__(self, environ: dict, response_handler: ResponseHandler) -> Iterator:
+        self.make("request").initialize(environ)
         self.__response_handler = response_handler
-
-    def __call__(self, *args, **kwargs) -> Iterator:
-        return self.__response_handler(*args, **kwargs)
 
     def bind(self, *args, **kwargs) -> None:
         return super().bind(*args, **kwargs)

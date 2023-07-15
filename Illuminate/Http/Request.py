@@ -34,3 +34,6 @@ class Request:
 
     def get(self, param):
         return self.params.get(param)
+
+    def capture(self):
+        print(self)
