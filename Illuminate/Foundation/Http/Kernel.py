@@ -21,14 +21,6 @@ class Kernel:
     __middleware_aliases = {}
     __route_middleware = {}
 
-    __bootstrapers = [
-        BootProviders,
-    ]
-
-    __middleware_priorities = [
-        HandlePrecognitiveRequests,
-    ]
-
     def __init__(self, app: Type["Application"], router: Type["Router"]) -> None:
         self.__app = app
         self.__router = router
@@ -37,13 +29,21 @@ class Kernel:
         self.__middleware_groups = self.middleware_groups
         self.__middleware_aliases = self.middleware_aliases
 
+        self.__bootstrappers = [
+            BootProviders,
+        ]
+
+        self.__middleware_priorities = [
+            HandlePrecognitiveRequests,
+        ]
+
         self.request_started_at = None
 
         self.__sync_middleware_to_router()
 
     @property
-    def bootstrapers(self):
-        return self.__bootstrapers
+    def bootstrappers(self):
+        return self.__bootstrappers
 
     @property
     def middleware_priorities(self):
@@ -88,6 +88,12 @@ class Kernel:
 
     def send_through_router(self, request: Request):
         self.__app.instance("request", request)
+
+        self.__bootstrap()
+
+    def __bootstrap(self):
+        if not self.__app.has_been_bootstrapped:
+            self.__app.bootstrap_with(self.bootstrappers)
 
     def terminate(self, request: Request, response: Response):
         print("terminating request")

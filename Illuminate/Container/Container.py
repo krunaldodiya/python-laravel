@@ -89,7 +89,7 @@ class Container(ABC):
         return instance
 
     def __validate_class_string(self, base_key: str):
-        return bool(re.match(r"^[\w]+\.[A-Z][\w]+$", base_key))
+        return bool(re.match(r"^[\w]+\.[\w]+\.[A-Z][\w.]*$", base_key))
 
     def __get_class_if_exists(self, base_key: str) -> Any:
         valid_class_path = self.__validate_class_string(base_key)

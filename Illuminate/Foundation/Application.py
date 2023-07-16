@@ -37,6 +37,8 @@ class Application(Container):
 
         self.__base_path: str = None
 
+        self.__has_been_bootstrapped = False
+
         self.__service_providers = {}
 
         self.__loaded_providers = {}
@@ -50,8 +52,22 @@ class Application(Container):
         return self.__base_path
 
     @property
+    def has_been_bootstrapped(self):
+        return self.__has_been_bootstrapped
+
+    @property
     def service_providers(self):
         return self.__service_providers
+
+    @property
+    def loaded_providers(self):
+        return self.__loaded_providers
+
+    def bootstrap_with(self, bootstrappers):
+        self.__has_been_bootstrapped = True
+
+        for bootstrapper in bootstrappers:
+            self.make(bootstrapper).bootstrap(self)
 
     def set_base_path(self, base_path):
         self.__base_path = base_path
