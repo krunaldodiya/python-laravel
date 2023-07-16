@@ -1,3 +1,4 @@
+import copy
 from typing import TYPE_CHECKING, Any, Type
 
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
@@ -37,7 +38,9 @@ class Application(Container):
 
         self.__base_path: str = None
 
-        self.__providers = []
+        self.__service_providers = {}
+
+        self.__loaded_providers = {}
 
         self.__register_base_bindings()
 
@@ -48,8 +51,8 @@ class Application(Container):
         return self.__base_path
 
     @property
-    def providers(self):
-        return self.__providers
+    def service_providers(self):
+        return self.__service_providers
 
     def set_base_path(self, base_path):
         self.__base_path = base_path
@@ -59,13 +62,28 @@ class Application(Container):
         self.instance(Container, self)
 
     def __register_base_providers(self):
-        self.__register_provider(EventServiceProvider(self))
-        self.__register_provider(LogServiceProvider(self))
-        self.__register_provider(RoutingServiceProvider(self))
+        self.__register_provider(EventServiceProvider)
+        self.__register_provider(LogServiceProvider)
+        self.__register_provider(RoutingServiceProvider)
 
-    def __register_provider(self, provider):
-        self.providers.append(provider)
+    def __register_provider(self, provider_class):
+        base_key = self.get_base_key(provider_class)
+
+        provider = provider_class(self)
+
+        registered = self.get_provider(base_key)
+
+        if registered:
+            return registered
+
+        self.__service_providers[base_key] = provider
+
         provider.register()
+
+        self.__loaded_providers[base_key] = True
+
+    def get_provider(self, base_key):
+        return self.service_providers.get(base_key)
 
     def bind(self, *args, **kwargs) -> None:
         return super().bind(*args, **kwargs)
@@ -84,3 +102,23 @@ class Application(Container):
         await response.send()
 
         kernel.terminate(request, response)
+
+    def get_info(self) -> str:
+        return self.convert_values_to_string(self.__dict__)
+
+    def convert_values_to_string(self, data):
+        copied_data = copy.copy(data)
+
+        def converter(obj):
+            if isinstance(obj, dict):
+                return {key: converter(value) for key, value in obj.items()}
+
+            elif isinstance(obj, list):
+                return [converter(value) for value in obj]
+
+            elif callable(obj):
+                return obj.__module__ + "." + obj.__name__
+
+            return str(obj)
+
+        return converter(copied_data)

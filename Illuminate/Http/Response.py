@@ -1,4 +1,3 @@
-import copy
 import json
 
 
@@ -32,7 +31,7 @@ class Response:
             }
         )
 
-        body = self.__app.get_container()
+        body = self.__app.get_info()
 
         body = json.dumps(body)
 

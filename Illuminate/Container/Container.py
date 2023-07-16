@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from typing import Any, Dict
 
-import copy
 import inspect
 import re
 
@@ -26,7 +25,7 @@ class Container(ABC):
         self.__resolved = {}
 
     def __bind(self, key: str, binding_resolver: Any, shared: bool):
-        base_key = self.__get_base_key(key)
+        base_key = self.get_base_key(key)
 
         self.__bindings[base_key] = {
             "base_key": base_key,
@@ -45,7 +44,7 @@ class Container(ABC):
     @abstractmethod
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            base_key = self.__get_base_key(key)
+            base_key = self.get_base_key(key)
             instance = self.__get_binding_if_exists(base_key, make_args)
 
             return self.instance(base_key, instance)
@@ -56,7 +55,7 @@ class Container(ABC):
             return self.instance(base_key, instance)
 
     def instance(self, key, instance):
-        base_key = self.__get_base_key(key)
+        base_key = self.get_base_key(key)
 
         self.__instances[base_key] = instance
         self.__resolved[base_key] = True
@@ -104,7 +103,7 @@ class Container(ABC):
 
         return getattr(module, class_name)
 
-    def __get_base_key(self, key: Any) -> str:
+    def get_base_key(self, key: Any) -> str:
         if isinstance(key, str):
             return key
 
@@ -128,17 +127,6 @@ class Container(ABC):
 
         raise BindingResolutionException("Binding Resolution Exception")
 
-    def get_container(self):
-        container = copy.copy(self)
-
-        data = {
-            "bindings": container.get_bindings(),
-            "instances": container.get_instances(),
-            "resolved": container.get_resolved(),
-        }
-
-        return self.__convert_values_to_string(data)
-
     def __get_dependencies(self, class_info):
         args_info = inspect.getfullargspec(class_info)
 
@@ -147,18 +135,3 @@ class Container(ABC):
             for arg in args_info.args
             if arg != "self"
         ]
-
-    def __convert_values_to_string(self, container):
-        def converter(obj):
-            if isinstance(obj, dict):
-                return {key: converter(value) for key, value in obj.items()}
-
-            elif isinstance(obj, list):
-                return [converter(value) for value in obj]
-
-            elif callable(obj):
-                return obj.__module__ + "." + obj.__name__
-
-            return str(obj)
-
-        return converter(container)
