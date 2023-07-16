@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from typing import TYPE_CHECKING, Type
 from Illuminate.Foundation.Bootstrap.BootProviders import BootProviders
 from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
@@ -34,6 +36,8 @@ class Kernel:
         self.__middleware = self.middleware
         self.__middleware_groups = self.middleware_groups
         self.__middleware_aliases = self.middleware_aliases
+
+        self.request_started_at = None
 
         self.__sync_middleware_to_router()
 
@@ -76,7 +80,14 @@ class Kernel:
             self.__router.alias_middleware(key, middleware)
 
     def handle(self, request: Request) -> Response:
+        self.request_started_at = datetime.now()
+
+        self.send_through_router(request)
+
         return self.__app.make("response")
+
+    def send_through_router(self, request: Request):
+        self.__app.instance("request", request)
 
     def terminate(self, request: Request, response: Response):
         print("terminating request")

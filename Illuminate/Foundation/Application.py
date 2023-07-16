@@ -94,9 +94,9 @@ class Application(Container):
         return super().make(*args, **kwargs)
 
     async def run_kernel(self, kernel: Type["Kernel"], server: Type["Server"]):
-        request: Request = self.make("request")
+        request: Request = Request.capture(self, server)
 
-        response: Response = kernel.handle(request.capture(server))
+        response: Response = kernel.handle(request)
 
         await response.send()
 

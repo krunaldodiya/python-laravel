@@ -44,6 +44,7 @@ class Response:
 
         data = Printer(
             {
+                "app": self.__app.__dict__,
                 "kernel": kernel.__dict__,
                 "router": router.__dict__,
             }
