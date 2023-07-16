@@ -25,7 +25,7 @@ class RoutingServiceProvider(ServiceProvider):
         self.__app.singleton("router", lambda: Router())
 
     def __register_http_request(self):
-        self.__app.bind("request", lambda: Request(self.__app))
+        self.__app.singleton("request", lambda: Request(self.__app))
 
     def __register_http_response(self):
-        self.__app.bind("response", lambda: Response(self.__app))
+        self.__app.singleton("response", lambda: Response(self.__app))

@@ -1,32 +1,11 @@
-from importlib import import_module
-from Illuminate.Http.Request import Request
-
-from Illuminate.Support.Facades.Response import Response
-
-from Illuminate.Contracts.Http.Kernel import Kernel
-
-from app.Http.Kernel import Kernel as HttpKernel
-
-from bootstrap.app import application
+from public.server import Server
 
 
-class App:
-    def __call__(self, environ, start_response):
-        print("test")
+async def main(scope, receive, send):
+    assert scope["type"] == "http"
 
-        application.set_environ(environ)
+    from public.index import application, kernel
 
-        application.set_response_handler(start_response)
+    server = Server(scope, receive, send)
 
-        kernel: HttpKernel = application.make(
-            Kernel, {"app": application, "router": application.make("router")}
-        )
-
-        request: Request = application.make("request")
-
-        response: Response = kernel.handle(request.capture()).send()
-
-        return kernel.terminate(request, response)
-
-
-app = App()
+    await application.run_kernel(kernel, server)

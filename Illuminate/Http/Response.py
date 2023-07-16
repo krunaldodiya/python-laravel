@@ -15,5 +15,7 @@ class Response:
     def get_response_content(self):
         return "test".encode("utf-8")
 
-    def send(self):
-        return ["test".encode("utf-8")]
+    async def send(self):
+        request = self.__app.make("request")
+
+        await request.server.send_response()

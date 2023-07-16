@@ -1,20 +1,26 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Type
 
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
+from Illuminate.Http.Request import Request
+from Illuminate.Http.Response import Response
 from Illuminate.Log.LogServiceProvider import LogServiceProvider
 from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
 
 from Illuminate.Container.Container import Container
-from Illuminate.Foundation.response_handler import ResponseHandler
 
 from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
 from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
+from public.server import Server
 
 PROVIDERS = [
     FrameworkServiceProvider,
     ViewServiceProvider,
 ]
+
+
+if TYPE_CHECKING:
+    from Illuminate.Foundation.Http.Kernel import Kernel
 
 
 class Application(Container):
@@ -31,10 +37,6 @@ class Application(Container):
 
         self.__base_path: str = None
 
-        self.__environ: dict = None
-
-        self.__response_handler: ResponseHandler = None
-
         self.__providers = []
 
         self.__register_base_bindings()
@@ -46,22 +48,8 @@ class Application(Container):
         return self.__base_path
 
     @property
-    def environ(self):
-        return self.__environ
-
-    @property
-    def response_handler(self):
-        return self.__response_handler
-
-    @property
     def providers(self):
         return self.__providers
-
-    def set_environ(self, environ):
-        self.__environ = environ
-
-    def set_response_handler(self, response_handler):
-        self.__response_handler = response_handler
 
     def set_base_path(self, base_path):
         self.__base_path = base_path
@@ -86,3 +74,12 @@ class Application(Container):
 
     def make(self, *args, **kwargs) -> Any:
         return super().make(*args, **kwargs)
+
+    async def run_kernel(self, kernel: Type["Kernel"], server: Type["Server"]):
+        request: Request = self.make("request")
+
+        response: Response = kernel.handle(request.capture(server))
+
+        await response.send()
+
+        kernel.terminate(request, response)
