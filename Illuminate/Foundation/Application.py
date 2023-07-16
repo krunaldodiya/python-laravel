@@ -57,17 +57,17 @@ class Application(Container):
 
     @property
     def service_providers(self):
-        return self.__service_providers
+        return [provider for provider in self.__service_providers.values()]
 
     @property
     def loaded_providers(self):
         return self.__loaded_providers
 
     def bootstrap_with(self, bootstrappers):
-        self.__has_been_bootstrapped = True
-
         for bootstrapper in bootstrappers:
             self.make(bootstrapper).bootstrap(self)
+
+        self.__has_been_bootstrapped = True
 
     def set_base_path(self, base_path):
         self.__base_path = base_path
@@ -98,7 +98,7 @@ class Application(Container):
         self.__loaded_providers[base_key] = True
 
     def get_provider(self, base_key):
-        return self.service_providers.get(base_key)
+        return self.__service_providers.get(base_key)
 
     def bind(self, *args, **kwargs) -> None:
         return super().bind(*args, **kwargs)
@@ -108,6 +108,10 @@ class Application(Container):
 
     def make(self, *args, **kwargs) -> Any:
         return super().make(*args, **kwargs)
+
+    def boot(self) -> Any:
+        for service_provider in self.service_providers:
+            service_provider.boot()
 
     async def run_kernel(self, kernel: Type["Kernel"], server: Type["Server"]):
         request: Request = Request.capture(self, server)
