@@ -40,8 +40,14 @@ class Response:
         )
 
         kernel = self.__app.make(Kernel)
+        router = self.__app.make("router")
 
-        data = Printer(kernel.__dict__)
+        data = Printer(
+            {
+                "kernel": kernel.__dict__,
+                "router": router.__dict__,
+            }
+        )
 
         body = json.dumps(data.print())
 

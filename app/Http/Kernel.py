@@ -1,18 +1,18 @@
 from Illuminate.Foundation.Http.Kernel import Kernel as HttpKernel
+from Illuminate.Http.Middleware.HandleCors import HandleCors
 from app.Http.Middleware.Authenticate import Authenticate
 
 
 class Kernel(HttpKernel):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    middleware = [
+        HandleCors,
+    ]
 
-        self.middleware = []
+    middleware_groups = {
+        "web": [],
+        "api": [],
+    }
 
-        self.middleware_groups = {
-            "web": [],
-            "api": [],
-        }
-
-        self.middleware_aliases = {
-            "auth": Authenticate,
-        }
+    middleware_aliases = {
+        "auth": Authenticate,
+    }

@@ -14,22 +14,26 @@ if TYPE_CHECKING:
 
 
 class Kernel:
+    __middleware = {}
+    __middleware_groups = {}
+    __middleware_aliases = {}
+    __route_middleware = {}
+
+    __bootstrapers = [
+        BootProviders,
+    ]
+
+    __middleware_priorities = [
+        HandlePrecognitiveRequests,
+    ]
+
     def __init__(self, app: Type["Application"], router: Type["Router"]) -> None:
         self.__app = app
         self.__router = router
 
-        self.middleware = {}
-        self.middleware_groups = {}
-        self.route_middleware = {}
-        self.middleware_aliases = {}
-
-        self.__bootstrapers = [
-            BootProviders,
-        ]
-
-        self.__middleware_priorities = [
-            HandlePrecognitiveRequests,
-        ]
+        self.__middleware = self.middleware
+        self.__middleware_groups = self.middleware_groups
+        self.__middleware_aliases = self.middleware_aliases
 
         self.__sync_middleware_to_router()
 
@@ -40,6 +44,22 @@ class Kernel:
     @property
     def middleware_priorities(self):
         return self.__middleware_priorities
+
+    @property
+    def middleware(self):
+        return self.__middleware
+
+    @property
+    def middleware_groups(self):
+        return self.__middleware_groups
+
+    @property
+    def middleware_aliases(self):
+        return self.__middleware_aliases
+
+    @property
+    def route_middleware(self):
+        return self.__route_middleware
 
     def __sync_middleware_to_router(self):
         self.__router.middleware_priorities = self.__middleware_priorities
