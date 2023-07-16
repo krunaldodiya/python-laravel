@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
 from importlib import import_module
+from typing import Any, Dict
+
+import copy
 import inspect
 import re
-from typing import Any, Dict
 
 
 class AttributeNotFound(Exception):
@@ -20,39 +22,53 @@ class BindingResolutionException(Exception):
 class Container(ABC):
     def __init__(self) -> None:
         self.__bindings: Dict[str, Dict[str, Any]] = {}
-        self.__singletons: Dict[str, Any] = {}
+        self.__instances: Dict[str, Any] = {}
+        self.__resolved = {}
+
+    def __bind(self, key: str, binding_resolver: Any, shared: bool):
+        base_key = self.__get_binding_resolver_location(key)
+
+        self.__bindings[base_key] = {
+            "base_key": base_key,
+            "binding_resolver": binding_resolver,
+            "shared": shared,
+        }
 
     @abstractmethod
     def bind(self, key: str, binding_resolver: Any) -> None:
-        base_key = self.__get_base_key(key)
-
-        self.__bindings[base_key] = {
-            "base_key": base_key,
-            "binding_resolver": binding_resolver,
-            "is_singleton": False,
-        }
+        return self.__bind(key, binding_resolver, False)
 
     @abstractmethod
     def singleton(self, key: str, binding_resolver: Any) -> None:
-        base_key = self.__get_base_key(key)
-
-        self.__bindings[base_key] = {
-            "base_key": base_key,
-            "binding_resolver": binding_resolver,
-            "is_singleton": True,
-        }
+        return self.__bind(key, binding_resolver, True)
 
     @abstractmethod
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            base_key = self.__get_base_key(key)
-            return self.__get_binding_if_exists(base_key, make_args)
+            base_key = self.__get_binding_resolver_location(key)
+            instance = self.__get_binding_if_exists(base_key, make_args)
+
+            return self.instance(base_key, instance)
         except BindingNotFound:
             binding_resolver = self.__get_class_if_exists(base_key)
-            return self.__resolve_binding(binding_resolver, make_args)
+            instance = self.__resolve_binding(binding_resolver, make_args)
+
+            return self.instance(base_key, instance)
+
+    def instance(self, base_key, instance):
+        self.__instances[base_key] = instance
+        self.__resolved[base_key] = True
+
+        return instance
 
     def get_bindings(self):
         return self.__bindings
+
+    def get_instances(self):
+        return self.__instances
+
+    def get_resolved(self):
+        return self.__resolved
 
     def __get_binding_if_exists(self, base_key: str, make_args: Dict[str, Any] = {}):
         binding = self.__bindings.get(base_key)
@@ -60,16 +76,13 @@ class Container(ABC):
         if not binding:
             raise BindingNotFound("Binding not found.")
 
-        is_singleton = binding["is_singleton"]
+        shared = binding["shared"]
+
         binding_resolver = binding["binding_resolver"]
 
-        if is_singleton:
-            instance = self.__singletons.get(base_key)
+        instance = self.__instances.get(base_key)
 
-            if instance is None:
-                instance = self.__resolve_binding(binding_resolver, make_args)
-                self.__singletons[base_key] = instance
-        else:
+        if not instance or not shared:
             instance = self.__resolve_binding(binding_resolver, make_args)
 
         return instance
@@ -89,11 +102,14 @@ class Container(ABC):
 
         return getattr(module, class_name)
 
-    def __get_base_key(self, key: Any) -> str:
+    def __get_binding_resolver_location(self, key: Any) -> str:
         if isinstance(key, str):
             return key
 
-        return f"{key.__module__}.{key.__name__}"
+        if callable(key):
+            return f"{key.__module__}.{key.__name__}"
+
+        raise Exception("Invalid key type")
 
     def __resolve_binding(
         self, binding_resolver: Any, make_args: Dict[str, Any] = {}
@@ -110,6 +126,17 @@ class Container(ABC):
 
         raise BindingResolutionException("Binding Resolution Exception")
 
+    def get_container(self):
+        container = copy.copy(self)
+
+        data = {
+            "bindings": container.get_bindings(),
+            "instances": container.get_instances(),
+            "resolved": container.get_resolved(),
+        }
+
+        return self.__convert_values_to_string(data)
+
     def __get_dependencies(self, class_info):
         args_info = inspect.getfullargspec(class_info)
 
@@ -118,3 +145,18 @@ class Container(ABC):
             for arg in args_info.args
             if arg != "self"
         ]
+
+    def __convert_values_to_string(self, container):
+        def converter(obj):
+            if isinstance(obj, dict):
+                return {key: converter(value) for key, value in obj.items()}
+
+            elif isinstance(obj, list):
+                return [converter(value) for value in obj]
+
+            elif callable(obj):
+                return obj.__module__ + "." + obj.__name__
+
+            return str(obj)
+
+        return converter(container)

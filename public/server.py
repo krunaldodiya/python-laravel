@@ -15,25 +15,5 @@ class Server:
 
         self.headers = scope["headers"]
 
-    async def send_response(self):
-        assert self.scope["type"] == "http"
-
-        await self.send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    [b"content-type", b"text/plain"],
-                ],
-            }
-        )
-
-        await self.send(
-            {
-                "type": "http.response.body",
-                "body": b"Hello, world!",
-            }
-        )
-
     def __parse_url(self, items: tuple):
         return ":".join(str(item) for item in items)

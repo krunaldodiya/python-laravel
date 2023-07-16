@@ -1,3 +1,7 @@
+import copy
+import json
+
+
 class Response:
     def __init__(self, app) -> None:
         self.__app = app
@@ -18,4 +22,23 @@ class Response:
     async def send(self):
         request = self.__app.make("request")
 
-        await request.server.send_response()
+        await request.server.send(
+            {
+                "type": "http.response.start",
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"application/json"],
+                ],
+            }
+        )
+
+        body = self.__app.get_container()
+
+        stringify_body = json.dumps(body)
+
+        await request.server.send(
+            {
+                "type": "http.response.body",
+                "body": stringify_body.encode("utf-8"),
+            }
+        )

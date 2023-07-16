@@ -55,7 +55,7 @@ class Application(Container):
         self.__base_path = base_path
 
     def __register_base_bindings(self):
-        self.bind("app", lambda: self)
+        self.instance("app", self)
 
     def __register_base_providers(self):
         self.__register_provider(EventServiceProvider(self))
