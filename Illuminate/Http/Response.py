@@ -1,8 +1,16 @@
 import json
 
+from typing import TYPE_CHECKING, Type
+from Illuminate.Contracts.Http.Kernel import Kernel
+
+from Illuminate.Foundation.Printer import Printer
+
+if TYPE_CHECKING:
+    from Illuminate.Foundation.Application import Application
+
 
 class Response:
-    def __init__(self, app) -> None:
+    def __init__(self, app: Type["Application"]) -> None:
         self.__app = app
 
         self.__response_body = ""
@@ -31,9 +39,11 @@ class Response:
             }
         )
 
-        body = self.__app.get_info()
+        kernel = self.__app.make(Kernel)
 
-        body = json.dumps(body)
+        data = Printer(kernel.__dict__)
+
+        body = json.dumps(data.print())
 
         await request.server.send(
             {

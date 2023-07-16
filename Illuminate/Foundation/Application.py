@@ -1,4 +1,3 @@
-import copy
 from typing import TYPE_CHECKING, Any, Type
 
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
@@ -102,23 +101,3 @@ class Application(Container):
         await response.send()
 
         kernel.terminate(request, response)
-
-    def get_info(self) -> str:
-        return self.convert_values_to_string(self.__dict__)
-
-    def convert_values_to_string(self, data):
-        copied_data = copy.copy(data)
-
-        def converter(obj):
-            if isinstance(obj, dict):
-                return {key: converter(value) for key, value in obj.items()}
-
-            elif isinstance(obj, list):
-                return [converter(value) for value in obj]
-
-            elif callable(obj):
-                return obj.__module__ + "." + obj.__name__
-
-            return str(obj)
-
-        return converter(copied_data)
