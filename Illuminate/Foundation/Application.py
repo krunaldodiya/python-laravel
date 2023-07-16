@@ -56,6 +56,7 @@ class Application(Container):
 
     def __register_base_bindings(self):
         self.instance("app", self)
+        self.instance(Container, self)
 
     def __register_base_providers(self):
         self.__register_provider(EventServiceProvider(self))

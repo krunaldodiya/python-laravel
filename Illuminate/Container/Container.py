@@ -26,7 +26,7 @@ class Container(ABC):
         self.__resolved = {}
 
     def __bind(self, key: str, binding_resolver: Any, shared: bool):
-        base_key = self.__get_binding_resolver_location(key)
+        base_key = self.__get_base_key(key)
 
         self.__bindings[base_key] = {
             "base_key": base_key,
@@ -45,7 +45,7 @@ class Container(ABC):
     @abstractmethod
     def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            base_key = self.__get_binding_resolver_location(key)
+            base_key = self.__get_base_key(key)
             instance = self.__get_binding_if_exists(base_key, make_args)
 
             return self.instance(base_key, instance)
@@ -55,7 +55,9 @@ class Container(ABC):
 
             return self.instance(base_key, instance)
 
-    def instance(self, base_key, instance):
+    def instance(self, key, instance):
+        base_key = self.__get_base_key(key)
+
         self.__instances[base_key] = instance
         self.__resolved[base_key] = True
 
@@ -102,7 +104,7 @@ class Container(ABC):
 
         return getattr(module, class_name)
 
-    def __get_binding_resolver_location(self, key: Any) -> str:
+    def __get_base_key(self, key: Any) -> str:
         if isinstance(key, str):
             return key
 

@@ -34,11 +34,11 @@ class Response:
 
         body = self.__app.get_container()
 
-        stringify_body = json.dumps(body)
+        body = json.dumps(body)
 
         await request.server.send(
             {
                 "type": "http.response.body",
-                "body": stringify_body.encode("utf-8"),
+                "body": body.encode("utf-8"),
             }
         )
