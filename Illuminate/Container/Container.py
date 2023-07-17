@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from importlib import import_module
-from typing import Any, Dict
+from typing import Any, Dict, TypeVar
 
 import inspect
 import re
@@ -23,6 +23,8 @@ class Container(ABC):
         self.__bindings: Dict[str, Dict[str, Any]] = {}
         self.__instances: Dict[str, Any] = {}
         self.__resolved = {}
+        self.__aliases = {}
+        self.__abstract_aliases = {}
 
     def __bind(self, key: str, binding_resolver: Any, shared: bool):
         base_key = self.get_base_key(key)
@@ -42,17 +44,13 @@ class Container(ABC):
         return self.__bind(key, binding_resolver, True)
 
     @abstractmethod
-    def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
+    def make(self, base_key: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            base_key = self.get_base_key(key)
             instance = self.__get_binding_if_exists(base_key, make_args)
-
             return self.instance(base_key, instance)
         except BindingNotFound:
             binding_resolver = self.__get_class_if_exists(base_key)
-            instance = self.__resolve_binding(binding_resolver, make_args)
-
-            return self.instance(base_key, instance)
+            return self.__resolve_binding(binding_resolver, make_args)
 
     def instance(self, key, instance):
         base_key = self.get_base_key(key)
@@ -61,6 +59,23 @@ class Container(ABC):
         self.__resolved[base_key] = True
 
         return instance
+
+    def alias(self, abstract_alias: str, alias: TypeVar("T")):
+        if abstract_alias == alias:
+            raise Exception(f"{abstract_alias} is aliased to itself")
+
+        base_key = self.get_base_key(alias)
+
+        self.__aliases[base_key] = abstract_alias
+        self.__abstract_aliases[abstract_alias] = []
+        self.__abstract_aliases[abstract_alias].append(base_key)
+
+    def get_alias(self, abstract):
+        try:
+            alias = self.__aliases[abstract]
+            return self.get_alias(alias)
+        except KeyError:
+            return abstract
 
     def get_bindings(self):
         return self.__bindings

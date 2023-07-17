@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Type
+from typing import TYPE_CHECKING, Any, Dict, Type
 
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
 from Illuminate.Http.Request import Request
@@ -12,6 +12,8 @@ from Illuminate.Container.Container import Container
 from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
 from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
 from public.server import Server
+
+from Illuminate.Routing.Router import Router
 
 PROVIDERS = [
     FrameworkServiceProvider,
@@ -43,9 +45,16 @@ class Application(Container):
 
         self.__loaded_providers = {}
 
-        self.__register_base_bindings()
+        self.__container_aliases = {
+            "app": [Application, Container],
+            "request": [Request],
+            "response": [Response],
+            "router": [Router],
+        }
 
+        self.__register_base_bindings()
         self.__register_base_providers()
+        self.__register_container_aliases()
 
     @property
     def base_path(self):
@@ -97,6 +106,11 @@ class Application(Container):
 
         self.__loaded_providers[base_key] = True
 
+    def __register_container_aliases(self):
+        for abstract_alias, aliases in self.__container_aliases.items():
+            for alias in aliases:
+                self.alias(abstract_alias, alias)
+
     def get_provider(self, base_key):
         return self.__service_providers.get(base_key)
 
@@ -106,8 +120,11 @@ class Application(Container):
     def singleton(self, *args, **kwargs) -> None:
         return super().singleton(*args, **kwargs)
 
-    def make(self, *args, **kwargs) -> Any:
-        return super().make(*args, **kwargs)
+    def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
+        base_key = self.get_base_key(key)
+        abstract = self.get_alias(base_key)
+
+        return super().make(abstract, make_args)
 
     def boot(self) -> Any:
         for service_provider in self.service_providers:
