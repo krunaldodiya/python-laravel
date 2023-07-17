@@ -1,15 +1,33 @@
-class Parent:
-    def get(self):
-        print("test", self.test)
+from Illuminate.Pipeline.Pipeline import Pipeline
 
 
-class Child(Parent):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.test = "test"
+pipeline = Pipeline("app")
 
 
-child = Child()
+def one(name, next):
+    try:
+        print("one")
+        return next(name)
+    except Exception as e:
+        print("one", e)
 
-child.get()
+
+def two(name, next):
+    try:
+        print("two")
+        return next(name)
+    except Exception as e:
+        print("two", e)
+
+
+def three(name, next):
+    try:
+        print("three")
+        return next(name)
+    except Exception as e:
+        print("three", e)
+
+
+output = pipeline.send("krunal").through([one, two, three]).then_return()
+
+print(output)

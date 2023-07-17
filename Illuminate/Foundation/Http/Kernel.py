@@ -91,6 +91,8 @@ class Kernel:
 
         self.__bootstrap()
 
+        print(self.middleware)
+
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
             self.__app.bootstrap_with(self.bootstrappers)
