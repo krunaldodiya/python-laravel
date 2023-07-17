@@ -1,2 +1,6 @@
+from typing import Any
+
+
 class HandleCors:
-    pass
+    def __call__(self) -> Any:
+        pass

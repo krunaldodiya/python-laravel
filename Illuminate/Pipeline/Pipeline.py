@@ -25,7 +25,7 @@ class Pipeline:
     def then(self, destination: callable):
         self.__destination = destination
 
-        return self.__destination(self.__output)
+        return self.__destination(self.__passable)
 
     def then_return(self):
         return self.__output

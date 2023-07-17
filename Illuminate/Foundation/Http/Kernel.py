@@ -8,6 +8,7 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
 
 from Illuminate.Http.Request import Request
 from Illuminate.Http.Response import Response
+from Illuminate.Pipeline.Pipeline import Pipeline
 
 
 if TYPE_CHECKING:
@@ -92,6 +93,11 @@ class Kernel:
         self.__bootstrap()
 
         print(self.middleware)
+
+        Pipeline(self.__app).send(request).through(self.middleware).then(self.__test)
+
+    def __test(self, request):
+        print(request)
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
