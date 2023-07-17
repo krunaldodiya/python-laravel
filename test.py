@@ -1,15 +1,17 @@
-class Parent:
-    def get(self):
-        print("test", self.test)
+from Illuminate.Pipeline.Pipeline import Pipeline
 
 
-class Child(Parent):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.test = "test"
+pipeline = Pipeline("app")
 
 
-child = Child()
+def eat(name, next):
+    print(f"eat: {name}")
+    return next
 
-child.get()
+
+def sleep(name, next):
+    print(f"sleep: {name}")
+    return next
+
+
+pipeline.send("krunal").through([eat, sleep]).then_return()
