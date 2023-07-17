@@ -44,21 +44,25 @@ class Container(ABC):
         return self.__bind(key, binding_resolver, True)
 
     @abstractmethod
-    def make(self, base_key: str, make_args: Dict[str, Any] = {}) -> Any:
+    def make(self, abstract: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            instance = self.__get_binding_if_exists(base_key, make_args)
-            return self.instance(base_key, instance)
+            instance = self.__get_binding_if_exists(abstract, make_args)
+            return self.__make_instance(abstract, instance)
         except BindingNotFound:
-            binding_resolver = self.__get_class_if_exists(base_key)
+            binding_resolver = self.__get_class_if_exists(abstract)
             return self.__resolve_binding(binding_resolver, make_args)
+
+    def __make_instance(self, abstract, instance):
+        self.__instances[abstract] = instance
+        self.__resolved[abstract] = True
+
+        return instance
 
     def instance(self, key, instance):
         base_key = self.get_base_key(key)
+        abstract = self.get_alias(base_key)
 
-        self.__instances[base_key] = instance
-        self.__resolved[base_key] = True
-
-        return instance
+        return self.__make_instance(abstract, instance)
 
     def alias(self, abstract_alias: str, alias: TypeVar("T")):
         if abstract_alias == alias:
