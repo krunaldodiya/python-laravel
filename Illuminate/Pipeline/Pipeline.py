@@ -1,3 +1,6 @@
+from functools import reduce
+
+
 class Pipeline:
     def __init__(self, app) -> None:
         self.__app = app
@@ -5,6 +8,7 @@ class Pipeline:
         self.__pipes = []
         self.__destination = None
         self.__output = None
+        self.__current_index = 0
 
     def send(self, passable):
         self.__passable = passable
@@ -14,16 +18,7 @@ class Pipeline:
     def through(self, pipes):
         self.__pipes = pipes
 
-        for current_index, current_pipe in enumerate(self.__pipes):
-            try:
-                next_pipe = self.__get_next_pipe(current_index)
-
-                output = current_pipe(self.__passable, next_pipe)
-
-                if output and output != next_pipe:
-                    self.__output = output
-            except Exception as e:
-                raise Exception(e)
+        reduce(self.__manage_pipe, self.__pipes, True)
 
         return self
 
@@ -35,8 +30,22 @@ class Pipeline:
     def then_return(self):
         return self.__output
 
-    def __get_next_pipe(self, current_index):
-        if current_index + 1 == len(self.__pipes):
-            return None
-        else:
-            return self.__pipes[current_index]
+    def __manage_pipe(self, should_continue, current_pipe):
+        if should_continue:
+            next_index = self.__current_index + 1
+
+            if next_index == len(self.__pipes):
+                next_pipe = lambda name: self.__output
+            else:
+                next_pipe = lambda name: self.__pipes[next_index]
+
+            output = current_pipe(self.__passable, next_pipe)
+
+            if callable(output):
+                self.__current_index = next_index
+
+                return True
+
+            self.__output = output
+
+        return False

@@ -4,14 +4,30 @@ from Illuminate.Pipeline.Pipeline import Pipeline
 pipeline = Pipeline("app")
 
 
-def eat(name, next):
-    print(f"eat: {name}")
-    return next
+def one(name, next):
+    try:
+        print("one")
+        return next(name)
+    except Exception as e:
+        print("one", e)
 
 
-def sleep(name, next):
-    print(f"sleep: {name}")
-    return next
+def two(name, next):
+    try:
+        print("two")
+        return next(name)
+    except Exception as e:
+        print("two", e)
 
 
-pipeline.send("krunal").through([eat, sleep]).then_return()
+def three(name, next):
+    try:
+        print("three")
+        return next(name)
+    except Exception as e:
+        print("three", e)
+
+
+output = pipeline.send("krunal").through([one, two, three]).then_return()
+
+print(output)
