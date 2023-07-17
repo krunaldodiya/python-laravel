@@ -130,8 +130,8 @@ class Application(Container):
         for service_provider in self.service_providers:
             service_provider.boot()
 
-    async def run_kernel(self, kernel: Type["Kernel"], server: Type["Server"]):
-        request: Request = Request.capture(self, server)
+    async def run_kernel(self, kernel: Type["Kernel"]):
+        request: Request = Request.capture()
 
         response: Response = kernel.handle(request)
 

@@ -1,11 +1,11 @@
 class Facade(type):
     def __getattr__(cls, attribute, *args, **kwargs):
-        from wsgi import app
-
-        application = app.get_application()
+        from bootstrap.app import application
 
         facade_accessor = cls.get_facade_accessor()
 
-        binding = application.make(facade_accessor)
+        abstract = application.get_alias(facade_accessor)
+
+        binding = application.make(abstract)
 
         return getattr(binding, attribute)

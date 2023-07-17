@@ -6,6 +6,6 @@ async def main(scope, receive, send):
 
     from public.index import application, kernel
 
-    server = Server(scope, receive, send)
+    application.bind("server", lambda: Server(scope, receive, send))
 
-    await application.run_kernel(kernel, server)
+    await application.run_kernel(kernel)

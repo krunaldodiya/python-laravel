@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Type
+from Illuminate.Support.Facades.App import App
 
 
 if TYPE_CHECKING:
@@ -24,8 +25,10 @@ class Request:
         return self.params.get(param)
 
     @staticmethod
-    def capture(app, server: Type["Server"]):
-        request = Request(app)
+    def capture():
+        request: Request = App.make("request")
+
+        server: Server = App.make("server")
 
         request.set_server(server)
 

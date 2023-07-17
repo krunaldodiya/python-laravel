@@ -18,6 +18,10 @@ class BindingResolutionException(Exception):
     pass
 
 
+class BuildingNewInstanceRequired(Exception):
+    pass
+
+
 class Container(ABC):
     def __init__(self) -> None:
         self.__bindings: Dict[str, Dict[str, Any]] = {}
@@ -25,15 +29,6 @@ class Container(ABC):
         self.__resolved = {}
         self.__aliases = {}
         self.__abstract_aliases = {}
-
-    def __bind(self, key: str, binding_resolver: Any, shared: bool):
-        base_key = self.get_base_key(key)
-
-        self.__bindings[base_key] = {
-            "base_key": base_key,
-            "binding_resolver": binding_resolver,
-            "shared": shared,
-        }
 
     @abstractmethod
     def bind(self, key: str, binding_resolver: Any) -> None:
@@ -47,16 +42,15 @@ class Container(ABC):
     def make(self, abstract: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
             instance = self.__get_binding_if_exists(abstract, make_args)
-            return self.__make_instance(abstract, instance)
-        except BindingNotFound:
+
+            if instance:
+                return self.__make_instance(abstract, instance)
+
             binding_resolver = self.__get_class_if_exists(abstract)
+
             return self.__resolve_binding(binding_resolver, make_args)
-
-    def __make_instance(self, abstract, instance):
-        self.__instances[abstract] = instance
-        self.__resolved[abstract] = True
-
-        return instance
+        except Exception as e:
+            raise Exception(e)
 
     def instance(self, key, instance):
         base_key = self.get_base_key(key)
@@ -81,6 +75,12 @@ class Container(ABC):
         except KeyError:
             return abstract
 
+    def get_aliases(self):
+        return self.__aliases
+
+    def get_abstract_aliases(self):
+        return self.__abstract_aliases
+
     def get_bindings(self):
         return self.__bindings
 
@@ -90,20 +90,42 @@ class Container(ABC):
     def get_resolved(self):
         return self.__resolved
 
+    def get_base_key(self, key: Any) -> str:
+        if isinstance(key, str):
+            return key
+
+        if callable(key):
+            return f"{key.__module__}.{key.__name__}"
+
+        raise Exception("Invalid key type")
+
+    def __bind(self, key: str, binding_resolver: Any, shared: bool):
+        base_key = self.get_base_key(key)
+
+        self.__bindings[base_key] = {
+            "base_key": base_key,
+            "binding_resolver": binding_resolver,
+            "shared": shared,
+        }
+
+    def __make_instance(self, abstract, instance):
+        self.__instances[abstract] = instance
+        self.__resolved[abstract] = True
+
+        return instance
+
     def __get_binding_if_exists(self, base_key: str, make_args: Dict[str, Any] = {}):
         binding = self.__bindings.get(base_key)
-
-        if not binding:
-            raise BindingNotFound("Binding not found.")
-
-        shared = binding["shared"]
-
-        binding_resolver = binding["binding_resolver"]
-
         instance = self.__instances.get(base_key)
 
-        if not instance or not shared:
-            instance = self.__resolve_binding(binding_resolver, make_args)
+        if binding and (not instance or not make_args):
+            shared = binding["shared"]
+            binding_resolver = binding["binding_resolver"]
+
+            if not instance or not shared:
+                instance = self.__resolve_binding(binding_resolver, make_args)
+
+            return instance
 
         return instance
 
@@ -121,15 +143,6 @@ class Container(ABC):
         module = import_module(module_path)
 
         return getattr(module, class_name)
-
-    def get_base_key(self, key: Any) -> str:
-        if isinstance(key, str):
-            return key
-
-        if callable(key):
-            return f"{key.__module__}.{key.__name__}"
-
-        raise Exception("Invalid key type")
 
     def __resolve_binding(
         self, binding_resolver: Any, make_args: Dict[str, Any] = {}
