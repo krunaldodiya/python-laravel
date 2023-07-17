@@ -29,17 +29,8 @@ class Response:
     async def send(self):
         request = self.__app.make("request")
 
-        await request.server.send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    [b"content-type", b"application/json"],
-                ],
-            }
-        )
-
         kernel = self.__app.make(Kernel)
+
         router = self.__app.make("router")
 
         data = Printer(
@@ -50,11 +41,12 @@ class Response:
             }
         )
 
-        body = json.dumps(data.print())
-
-        await request.server.send(
+        await request.server.send_response(
             {
-                "type": "http.response.body",
-                "body": body.encode("utf-8"),
+                "status": 200,
+                "headers": [
+                    [b"content-type", b"application/json"],
+                ],
+                "body": json.dumps(data.print()).encode("utf-8"),
             }
         )
