@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Type
-from Illuminate.Foundation.Debugger import Debugger
+from Illuminate.Log.LogManager import LogManager
 
 from Illuminate.Support.ServiceProvider import ServiceProvider
 
@@ -12,7 +12,7 @@ class LogServiceProvider(ServiceProvider):
         self.__app = app
 
     def register(self):
-        self.__app.singleton("debug", lambda: Debugger(self.__app))
+        self.__app.singleton("log", lambda: LogManager(self.__app))
 
     def boot(self):
         pass
