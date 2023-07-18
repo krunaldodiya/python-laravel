@@ -92,16 +92,16 @@ class Kernel:
 
         self.__bootstrap()
 
-        print(self.middleware)
+        Pipeline(self.__app).send(request).through(self.middleware).then(
+            self.__dispatch_to_router
+        )
 
-        Pipeline(self.__app).send(request).through(self.middleware).then(self.__test)
-
-    def __test(self, request):
-        print(request)
+    def __dispatch_to_router(self, request):
+        print("dispatching")
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
             self.__app.bootstrap_with(self.bootstrappers)
 
-    def terminate(self, request: Request, response: Response):
+    def terminate(self, request: Request, response: ResponseFactory):
         print("terminating request")

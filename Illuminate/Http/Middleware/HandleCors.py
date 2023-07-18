@@ -2,5 +2,5 @@ from typing import Any
 
 
 class HandleCors:
-    def __call__(self) -> Any:
-        pass
+    def handle(self, passable, next) -> Any:
+        print("handling cors")

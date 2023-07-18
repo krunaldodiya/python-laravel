@@ -1,4 +1,5 @@
 from functools import reduce
+import inspect
 
 
 class Pipeline:
@@ -28,7 +29,7 @@ class Pipeline:
     def through(self, pipes):
         self.__pipes = pipes
 
-        reduce(self.__manage_pipe, self.__pipes, True)
+        reduce(self.__resolve_pipe, self.__pipes, True)
 
         return self
 
@@ -40,6 +41,27 @@ class Pipeline:
 
     def then_return(self):
         return self.then(lambda passable: self.__output)
+
+    def __resolve_pipe(self, should_continue, current_pipe):
+        caller = None
+
+        if inspect.isclass(current_pipe):
+            object = self.__app.make(current_pipe)
+            caller = self.__get_caller(object)
+        elif callable(current_pipe):
+            caller = current_pipe
+        else:
+            caller = self.__get_caller(current_pipe)
+
+        should_continue = should_continue and caller is not None
+
+        self.__manage_pipe(should_continue, caller)
+
+    def __get_caller(self, obj):
+        if hasattr(obj, "handle"):
+            return getattr(obj, "handle")
+        else:
+            return getattr(obj, "__call__")
 
     def __manage_pipe(self, should_continue, current_pipe):
         if should_continue:
