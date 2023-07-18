@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, Type
+from Illuminate.Http.Request import Request
 
 from Illuminate.Routing.RouteCollection import RouteCollection
-from Illuminate.Support.Facades.Debug import Debug
 
 
 if TYPE_CHECKING:
@@ -31,13 +31,32 @@ class Router:
         return self
 
     def get(self, uri, action):
-        self.add_route(["GET", "HEAD"], uri, action)
+        self.__add_route(["GET", "HEAD"], uri, action)
 
-    def post(self, route, handler):
-        self.add_route(route, handler, "POST")
+    def post(self, uri, action):
+        self.__add_route(["POST"], uri, action)
 
-    def add_route(self, methods, uri, action):
+    def put(self, uri, action):
+        self.__add_route(["PUT"], uri, action)
+
+    def patch(self, uri, action):
+        self.__add_route(["PATCH"], uri, action)
+
+    def delete(self, uri, action):
+        self.__add_route(["DELETE"], uri, action)
+
+    def __add_route(self, methods, uri, action):
         self.routes.add(self.create_route(methods, uri, action))
 
-    def dispatch(self, request):
-        Debug.dd(request)
+    def dispatch(self, request: Request):
+        self.current_request = request
+        self.__dispatch_to_route(request)
+
+    def __dispatch_to_route(self, request):
+        self.__run_route(request, self.__find_route(request))
+
+    def __find_route(self, request):
+        return None
+
+    def __run_route(self, request, route):
+        return None
