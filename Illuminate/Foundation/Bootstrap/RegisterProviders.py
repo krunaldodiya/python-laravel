@@ -4,6 +4,6 @@ if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
 
 
-class BootProviders:
+class RegisterProviders:
     def bootstrap(self, app: Type["Application"]) -> None:
-        app.boot()
+        app.register_configured_providers()

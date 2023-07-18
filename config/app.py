@@ -1,3 +1,3 @@
-data = {
+app = {
     "test": "test",
 }

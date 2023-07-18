@@ -11,9 +11,20 @@ class Logger:
         print("logging", info)
 
     def dd(self, info):
-        data = vars(info)
-        dict_obj = convert_values_to_string(data)
-        string_obj = json.dumps(dict_obj)
+        if isinstance(info, str):
+            data = info
+        elif isinstance(info, (int, float, bool)):
+            data = str(info)
+        elif isinstance(info, (list, dict)):
+            data = json.dumps(convert_values_to_string(info))
+        elif callable(info):
+            data = json.dumps(convert_values_to_string(vars(info)))
+        else:
+            data = (
+                json.dumps(convert_values_to_string(vars(info)))
+                if hasattr(info, "__dict__")
+                else str(info)
+            )
 
         response = self.__app.make("response")
-        response.set_data(string_obj)
+        response.set_data(data)
