@@ -237,6 +237,12 @@ class Application(Container):
 
         return super().make(abstract, make_args)
 
+    def register_configured_providers(self) -> Any:
+        print("registering")
+
     def boot(self) -> Any:
         for service_provider in self.service_providers:
             service_provider.boot()
+
+    def detect_environment(self, callback):
+        pass

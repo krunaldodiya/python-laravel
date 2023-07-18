@@ -1,19 +1,20 @@
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING, Type
 from dotenv import load_dotenv
+
+if TYPE_CHECKING:
+    from Illuminate.Foundation.Application import Application
 
 
 class LoadEnvironment:
-    def __init__(self, environment=None, override=True) -> None:
-        env_path = Path(".env")
-        load_dotenv(env_path)
+    def bootstrap(self, app: Type["Application"]) -> None:
+        self.__load_environment(".env", False)
 
-        if os.environ.get("APP_ENV"):
-            self.__load_environment(os.environ.get("APP_ENV"), override=override)
-
-        if environment:
-            self._load_environment(environment, override=override)
+        if os.getenv("APP_ENV"):
+            self.__load_environment(f".env." + os.getenv("APP_ENV"), True)
 
     def __load_environment(self, environment, override):
-        env_path = Path(f".env.{environment}")
-        load_dotenv(env_path)
+        env_path = Path(environment)
+
+        load_dotenv(env_path, override=override)

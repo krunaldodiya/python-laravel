@@ -4,6 +4,6 @@ if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
 
 
-class BootProviders:
+class HandleExceptions:
     def bootstrap(self, app: Type["Application"]) -> None:
-        app.boot()
+        pass

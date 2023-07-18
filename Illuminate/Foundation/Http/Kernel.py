@@ -2,6 +2,11 @@ from datetime import datetime
 
 from typing import TYPE_CHECKING, Type
 from Illuminate.Foundation.Bootstrap.BootProviders import BootProviders
+from Illuminate.Foundation.Bootstrap.HandleExceptions import HandleExceptions
+from Illuminate.Foundation.Bootstrap.LoadConfiguration import LoadConfiguration
+from Illuminate.Foundation.Bootstrap.LoadEnvironment import LoadEnvironment
+from Illuminate.Foundation.Bootstrap.RegisterFacades import RegisterFacades
+from Illuminate.Foundation.Bootstrap.RegisterProviders import RegisterProviders
 from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
     HandlePrecognitiveRequests,
 )
@@ -32,6 +37,11 @@ class Kernel:
         self.__middleware_aliases = self.middleware_aliases
 
         self.__bootstrappers = [
+            LoadEnvironment,
+            LoadConfiguration,
+            HandleExceptions,
+            RegisterFacades,
+            RegisterProviders,
             BootProviders,
         ]
 
