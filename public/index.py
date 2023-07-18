@@ -4,7 +4,7 @@ from Illuminate.Http.Request import Request
 
 from Illuminate.Http.ResponseFactory import ResponseFactory
 
-from Illuminate.Support.Facades.Debug import Debug
+from Illuminate.Support.Facades.Log import Log
 
 from app.Http.Kernel import Kernel as HttpKernel
 
@@ -18,6 +18,6 @@ response: ResponseFactory = kernel.handle(request)
 
 response.send()
 
-Debug.dd(app)
+Log.dd(app)
 
 kernel.terminate(request, response)
