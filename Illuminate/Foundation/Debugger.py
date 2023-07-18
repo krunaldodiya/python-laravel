@@ -1,4 +1,6 @@
-import copy
+import json
+
+from Illuminate.Helpers.dd import convert_values_to_string
 
 
 class Debugger:
@@ -6,21 +8,10 @@ class Debugger:
         self.__app = app
 
     def dd(self, data):
-        return self.__convert_values_to_string(data)
+        data = vars(data)
+        data = convert_values_to_string(data)
+        data = json.dumps(data)
 
-    def __convert_values_to_string(self, data):
-        copied_data = copy.copy(data)
+        response = self.__app.make("response")
 
-        def converter(obj):
-            if isinstance(obj, dict):
-                return {key: converter(value) for key, value in obj.items()}
-
-            elif isinstance(obj, list):
-                return [converter(value) for value in obj]
-
-            elif callable(obj):
-                return obj.__module__ + "." + obj.__name__
-
-            return str(obj)
-
-        return converter(copied_data)
+        response.set_data(data)

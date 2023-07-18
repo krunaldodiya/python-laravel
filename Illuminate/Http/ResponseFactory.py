@@ -1,4 +1,6 @@
+import json
 from typing import TYPE_CHECKING, Type
+from Illuminate.Helpers.dd import convert_values_to_string
 
 from Illuminate.Support.Facades.Event import Event
 
@@ -10,7 +12,7 @@ class ResponseFactory:
     def __init__(self, app: Type["Application"]) -> None:
         self.__app = app
 
-        self.__response_body = ""
+        self.__response_content = ""
         self.__status = "200 OK"
         self.__response_headers = {"Content-type": "text/html"}
 
@@ -21,12 +23,17 @@ class ResponseFactory:
         return [("Content-type", "text/html")]
 
     def get_response_content(self):
-        return "test".encode("utf-8")
+        return self.__response_content
 
     def send(self):
         print("sending")
 
+    def set_data(self, response_body):
+        self.__response_content = response_body
+
     async def send_async(self, server):
+        data = self.get_response_content()
+
         await server.send(
             {
                 "type": "http.response.start",
@@ -40,7 +47,7 @@ class ResponseFactory:
         await server.send(
             {
                 "type": "http.response.body",
-                "body": "test".encode("utf-8"),
+                "body": data.encode("utf-8"),
             }
         )
 

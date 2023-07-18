@@ -9,6 +9,7 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
+from Illuminate.Support.Facades.Debug import Debug
 from Illuminate.Support.Facades.Event import Event
 
 
@@ -98,7 +99,8 @@ class Kernel:
         )
 
     def __dispatch_to_router(self, request):
-        print("dispatching")
+        router = self.__app.make("router")
+        Debug.dd(router)
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
