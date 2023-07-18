@@ -1,3 +1,6 @@
+from Illuminate.Routing.Route import Route
+
+
 class RouteCollection:
-    def __init__(self, app) -> None:
-        self.__app = app
+    def add(self, route: Route) -> None:
+        self.route = route

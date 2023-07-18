@@ -9,7 +9,6 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
-from Illuminate.Support.Facades.Debug import Debug
 from Illuminate.Support.Facades.Event import Event
 
 
@@ -95,20 +94,18 @@ class Kernel:
         self.__bootstrap()
 
         Pipeline(self.__app).send(request).through(self.middleware).then(
-            self.__dispatch_to_router
+            self.__dispatch_to_router()
         )
 
-    def __dispatch_to_router(self, request):
-        router = self.__app.make("router")
-        Debug.dd(router)
+    def __dispatch_to_router(self):
+        return lambda request: self.__router.dispatch(request)
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
             self.__app.bootstrap_with(self.bootstrappers)
 
     def __terminate(self, request: Request, response: ResponseFactory):
-        print("request", request)
-        print("response", response)
+        pass
 
     def terminate(self, *args, **kwargs):
         Event.listen("response_sent", lambda: self.__terminate(*args, **kwargs))

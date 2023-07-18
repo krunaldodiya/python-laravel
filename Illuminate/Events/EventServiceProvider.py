@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING, Type
-from EventDispatcher import EventDispatcher
+from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Support.ServiceProvider import ServiceProvider
 
@@ -12,7 +12,7 @@ class EventServiceProvider(ServiceProvider):
         self.__app = app
 
     def register(self):
-        self.__app.singleton("events", lambda: EventDispatcher(self))
+        self.__app.singleton("events", lambda: Dispatcher(self))
 
     def boot(self):
         pass
