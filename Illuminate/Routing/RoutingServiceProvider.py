@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Type
 from Illuminate.Support.ServiceProvider import ServiceProvider
 from Illuminate.Routing.Router import Router
 from Illuminate.Http.Request import Request
-from Illuminate.Http.Response import Response
+from Illuminate.Http.ResponseFactory import ResponseFactory
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
@@ -28,4 +28,4 @@ class RoutingServiceProvider(ServiceProvider):
         self.__app.singleton("request", lambda: Request(self.__app))
 
     def __register_http_response(self):
-        self.__app.singleton("response", lambda: Response(self.__app))
+        self.__app.singleton("response", lambda: ResponseFactory(self.__app))

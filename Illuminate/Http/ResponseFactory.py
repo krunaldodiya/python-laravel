@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
 
 
-class Response:
+class ResponseFactory:
     def __init__(self, app: Type["Application"]) -> None:
         self.__app = app
 
@@ -26,7 +26,12 @@ class Response:
     def get_response_content(self):
         return "test".encode("utf-8")
 
-    async def send(self):
+    def send(self):
+        print("sending sync response")
+
+    async def send_async(self):
+        print("sending async response")
+
         request = self.__app.make("request")
 
         await request.server.send(

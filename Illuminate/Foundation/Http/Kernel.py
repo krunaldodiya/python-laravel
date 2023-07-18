@@ -7,7 +7,7 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
 )
 
 from Illuminate.Http.Request import Request
-from Illuminate.Http.Response import Response
+from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
 
 
@@ -80,7 +80,7 @@ class Kernel:
         for key, middleware in merged_middleware.items():
             self.__router.alias_middleware(key, middleware)
 
-    def handle(self, request: Request) -> Response:
+    def handle(self, request: Request) -> ResponseFactory:
         self.request_started_at = datetime.now()
 
         self.send_through_router(request)
