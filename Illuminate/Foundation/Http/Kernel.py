@@ -44,6 +44,10 @@ class Kernel:
         self.__sync_middleware_to_router()
 
     @property
+    def router(self):
+        return self.__router
+
+    @property
     def bootstrappers(self):
         return self.__bootstrappers
 
