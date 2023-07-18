@@ -1,13 +1,15 @@
 from importlib import import_module
+
+from Illuminate.Http.ServerBag import ServerBag
+
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Support.Facades.App import App
-from public.server import Server
 
 
 async def main(scope, receive, send):
     assert scope["type"] == "http"
 
-    server: Server = App.instance("server", Server(scope, receive, send))
+    server: ServerBag = App.instance("server", ServerBag(scope, receive, send))
 
     import_module("public.index")
 
