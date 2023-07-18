@@ -1,8 +1,9 @@
-from typing import TYPE_CHECKING, Any, Dict, Type
+from typing import Any, Dict
+from EventDispatcher import EventDispatcher
 
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
 from Illuminate.Http.Request import Request
-from Illuminate.Http.Response import Response
+from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Log.LogServiceProvider import LogServiceProvider
 from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
@@ -11,7 +12,6 @@ from Illuminate.Container.Container import Container
 
 from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
 from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
-from public.server import Server
 
 from Illuminate.Routing.Router import Router
 
@@ -19,10 +19,6 @@ PROVIDERS = [
     FrameworkServiceProvider,
     ViewServiceProvider,
 ]
-
-
-if TYPE_CHECKING:
-    from Illuminate.Foundation.Http.Kernel import Kernel
 
 
 class Application(Container):
@@ -48,8 +44,9 @@ class Application(Container):
         self.__container_aliases = {
             "app": [Application, Container],
             "request": [Request],
-            "response": [Response],
+            "response": [ResponseFactory],
             "router": [Router],
+            "event": [EventDispatcher],
         }
 
         self.__register_base_bindings()
@@ -129,12 +126,3 @@ class Application(Container):
     def boot(self) -> Any:
         for service_provider in self.service_providers:
             service_provider.boot()
-
-    async def run_kernel(self, kernel: Type["Kernel"]):
-        request: Request = Request.capture()
-
-        response: Response = kernel.handle(request)
-
-        await response.send()
-
-        kernel.terminate(request, response)

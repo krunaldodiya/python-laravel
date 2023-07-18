@@ -4,28 +4,29 @@ from Illuminate.Pipeline.Pipeline import Pipeline
 pipeline = Pipeline("app")
 
 
-def one(name, next):
+def one(passable, next):
     try:
-        print("one")
-        return next(name)
+        return next(passable)
     except Exception as e:
         print("one", e)
 
 
-def two(name, next):
+def two(passable, next):
     try:
-        print("two")
-        return next(name)
+        return "two"
     except Exception as e:
         print("two", e)
 
 
-def three(name, next):
+def three(passable, next):
     try:
-        print("three")
-        return next(name)
+        return next(passable)
     except Exception as e:
         print("three", e)
+
+
+def hello(output):
+    return output
 
 
 output = pipeline.send("krunal").through([one, two, three]).then_return()

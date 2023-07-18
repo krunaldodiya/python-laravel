@@ -2,7 +2,7 @@ from importlib import import_module
 import inspect
 import re
 from Illuminate.Support.Facades.Response import Response
-from Illuminate.Http.Response import Response
+from Illuminate.Http.ResponseFactory import ResponseFactory
 
 
 class Backup:
@@ -87,7 +87,7 @@ class Backup:
 
             response = method(request)
 
-            if isinstance(response, Response):
+            if isinstance(response, ResponseFactory):
                 return response
             else:
                 return Response.make(response, "200 OK")

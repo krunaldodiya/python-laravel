@@ -1,2 +1,6 @@
+from typing import Any
+
+
 class HandleCors:
-    pass
+    def handle(self, passable, next) -> Any:
+        print("handling cors")
