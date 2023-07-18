@@ -5,13 +5,18 @@ class Pipeline:
     def __init__(self, app) -> None:
         self.__app = app
         self.__passable = None
+        self.__method = "handle"
         self.__pipes = []
-        self.__destination = None
         self.__output = None
         self.__current_index = 0
 
     def send(self, passable):
         self.__passable = passable
+
+        return self
+
+    def via(self, method):
+        self.__method = method
 
         return self
 
@@ -23,12 +28,10 @@ class Pipeline:
         return self
 
     def then(self, destination: callable):
-        self.__destination = destination
-
-        return self.__destination(self.__passable)
+        return destination(self.__output)
 
     def then_return(self):
-        return self.__output
+        return self.then(lambda passable: self.__output)
 
     def __manage_pipe(self, should_continue, current_pipe):
         if should_continue:
