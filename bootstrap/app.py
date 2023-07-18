@@ -1,9 +1,11 @@
+from pathlib import Path
+
 from Illuminate.Contracts.Http.Kernel import Kernel
 
 from Illuminate.Foundation.Application import Application
 
 from app.Http.Kernel import Kernel as HttpKernel
 
-application: Application = Application()
+app: Application = Application(Path().cwd())
 
-application.singleton(Kernel, HttpKernel)
+app.singleton(Kernel, HttpKernel)

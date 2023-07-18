@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Any, Dict
 from Illuminate.Events.Dispatcher import Dispatcher
 
@@ -22,18 +23,18 @@ PROVIDERS = [
 
 
 class Application(Container):
-    __instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if not cls.__instance:
-            cls.__instance = super().__new__(cls, *args, **kwargs)
-
-        return cls.__instance
-
-    def __init__(self) -> None:
+    def __init__(self, base_path=None) -> None:
         super().__init__()
 
-        self.__base_path: str = None
+        self.__app_path = None
+        self.__base_path = None
+        self.__config_path = None
+        self.__database_path = None
+        self.__public_path = None
+        self.__resources_path = None
+        self.__storage_path = None
+        self.__lang_path = None
+        self.__bootstrap_path = None
 
         self.__has_been_bootstrapped = False
 
@@ -49,13 +50,12 @@ class Application(Container):
             "events": [Dispatcher],
         }
 
+        if base_path:
+            self.set_base_path(base_path)
+
         self.__register_base_bindings()
         self.__register_base_providers()
         self.__register_container_aliases()
-
-    @property
-    def base_path(self):
-        return self.__base_path
 
     @property
     def has_been_bootstrapped(self):
@@ -77,6 +77,120 @@ class Application(Container):
 
     def set_base_path(self, base_path):
         self.__base_path = base_path
+        self.__bind_path_in_container()
+
+        return self
+
+    def join_paths(self, base_path, path):
+        return Path().joinpath(base_path, path)
+
+    def base_path(self, path=""):
+        return self.join_paths(self.__base_path, path)
+
+    def app_path(self, path=""):
+        return self.join_paths(
+            self.__app_path if self.__app_path else self.base_path("app"),
+            path,
+        )
+
+    def use_app_path(self, path):
+        self.__app_path = path
+        self.instance("path", path)
+        return self
+
+    def config_path(self, path=""):
+        return self.join_paths(
+            self.__config_path if self.__config_path else self.base_path("config"),
+            path,
+        )
+
+    def use_config_path(self, path):
+        self.__config_path = path
+        self.instance("path.config", path)
+        return self
+
+    def database_path(self, path=""):
+        return self.join_paths(
+            self.__database_path
+            if self.__database_path
+            else self.base_path("database"),
+            path,
+        )
+
+    def use_database_path(self, path):
+        self.__database_path = path
+        self.instance("path.database", path)
+        return self
+
+    def public_path(self, path=""):
+        return self.join_paths(
+            self.__public_path if self.__public_path else self.base_path("public"),
+            path,
+        )
+
+    def use_public_path(self, path):
+        self.__public_path = path
+        self.instance("path.public", path)
+        return self
+
+    def resources_path(self, path=""):
+        return self.join_paths(
+            self.__resources_path
+            if self.__resources_path
+            else self.base_path("resources"),
+            path,
+        )
+
+    def use_resources_path(self, path):
+        self.__resources_path = path
+        self.instance("path.resources", path)
+        return self
+
+    def storage_path(self, path=""):
+        return self.join_paths(
+            self.__storage_path if self.__storage_path else self.base_path("storage"),
+            path,
+        )
+
+    def use_storage_path(self, path):
+        self.__storage_path = path
+        self.instance("path.storage", path)
+        return self
+
+    def lang_path(self, path=""):
+        return self.join_paths(
+            self.__lang_path if self.__lang_path else self.base_path("lang"),
+            path,
+        )
+
+    def use_lang_path(self, path):
+        self.__lang_path = path
+        self.instance("path.lang", path)
+        return self
+
+    def bootstrap_path(self, path=""):
+        return self.join_paths(
+            self.__bootstrap_path
+            if self.__bootstrap_path
+            else self.base_path("bootstrap"),
+            path,
+        )
+
+    def use_bootstrap_path(self, path):
+        self.__bootstrap_path = path
+        self.instance("path.bootstrap", path)
+        return self
+
+    def __bind_path_in_container(self):
+        self.instance("path", self.app_path())
+        self.instance("path.base", self.base_path())
+        self.instance("path.config", self.config_path())
+        self.instance("path.database", self.database_path())
+        self.instance("path.public", self.public_path())
+        self.instance("path.resources", self.resources_path())
+        self.instance("path.storage", self.storage_path())
+        self.instance("path.lang", self.lang_path())
+        self.instance("path.bootstrap", self.bootstrap_path())
 
     def __register_base_bindings(self):
         self.instance("app", self)
