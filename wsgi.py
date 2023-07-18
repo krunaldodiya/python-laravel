@@ -7,10 +7,10 @@ from public.server import Server
 async def main(scope, receive, send):
     assert scope["type"] == "http"
 
-    App.bind("server", lambda: Server(scope, receive, send))
+    server: Server = App.instance("server", Server(scope, receive, send))
 
     import_module("public.index")
 
     response: ResponseFactory = App.make("response")
 
-    await response.send_async()
+    await response.send_async(server)

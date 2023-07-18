@@ -1,9 +1,5 @@
-import json
-
+import asyncio
 from typing import TYPE_CHECKING, Type
-from Illuminate.Contracts.Http.Kernel import Kernel
-
-from Illuminate.Foundation.Printer import Printer
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
@@ -27,14 +23,10 @@ class ResponseFactory:
         return "test".encode("utf-8")
 
     def send(self):
-        print("sending sync response")
+        pass
 
-    async def send_async(self):
-        print("sending async response")
-
-        request = self.__app.make("request")
-
-        await request.server.send(
+    async def send_async(self, server):
+        await server.send(
             {
                 "type": "http.response.start",
                 "status": 200,
@@ -44,22 +36,9 @@ class ResponseFactory:
             }
         )
 
-        kernel = self.__app.make(Kernel)
-        router = self.__app.make("router")
-
-        data = Printer(
-            {
-                "app": self.__app.__dict__,
-                "kernel": kernel.__dict__,
-                "router": router.__dict__,
-            }
-        )
-
-        body = json.dumps(data.print())
-
-        await request.server.send(
+        await server.send(
             {
                 "type": "http.response.body",
-                "body": body.encode("utf-8"),
+                "body": "test".encode("utf-8"),
             }
         )
