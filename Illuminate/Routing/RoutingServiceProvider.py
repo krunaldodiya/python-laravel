@@ -22,7 +22,9 @@ class RoutingServiceProvider(ServiceProvider):
         pass
 
     def __register_router(self):
-        self.__app.singleton("router", lambda: Router(self.__app))
+        self.__app.singleton(
+            "router", lambda: Router(self.__app, self.__app.make("events"))
+        )
 
     def __register_http_request(self):
         self.__app.singleton("request", lambda: Request(self.__app))

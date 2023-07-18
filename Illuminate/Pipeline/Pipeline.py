@@ -37,10 +37,10 @@ class Pipeline:
         return self.__pipes
 
     def then(self, destination: callable):
-        return destination(self.__output)
+        return destination(self.__output or self.__passable)
 
     def then_return(self):
-        return self.then(lambda passable: self.__output)
+        return self.then(lambda passable: passable)
 
     def __resolve_pipe(self, should_continue, current_pipe):
         caller = None

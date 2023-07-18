@@ -94,19 +94,18 @@ class Kernel:
         self.__bootstrap()
 
         Pipeline(self.__app).send(request).through(self.middleware).then(
-            self.__dispatch_to_router
+            self.__dispatch_to_router()
         )
 
-    def __dispatch_to_router(self, request):
-        print("dispatching")
+    def __dispatch_to_router(self):
+        return lambda request: self.__router.dispatch(request)
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
             self.__app.bootstrap_with(self.bootstrappers)
 
     def __terminate(self, request: Request, response: ResponseFactory):
-        print("request", request)
-        print("response", response)
+        pass
 
     def terminate(self, *args, **kwargs):
         Event.listen("response_sent", lambda: self.__terminate(*args, **kwargs))

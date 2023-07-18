@@ -1,4 +1,4 @@
-class EventDispatcher:
+class Dispatcher:
     def __init__(self, app) -> None:
         self.__app = app
         self.__listeners = {}
