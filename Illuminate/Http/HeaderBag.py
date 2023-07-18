@@ -8,5 +8,5 @@ class HeaderBag:
         }
 
         self.cache_controller = {
-            "cache-control": to_dict(self.headers["cache-control"]),
+            "cache-control": to_dict(self.headers.get("cache-control", "max-age=0"))
         }
