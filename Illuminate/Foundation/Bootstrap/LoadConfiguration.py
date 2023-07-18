@@ -28,7 +28,7 @@ class LoadConfiguration:
             file_name, file_content = self.__get_info(file)
             config.set(file_name, file_content)
 
-        Log.dd(config.get("app"))
+        Log.dd(config.get("app.test.test"))
 
     def __get_info(self, file):
         file_name = file.name[:-3]

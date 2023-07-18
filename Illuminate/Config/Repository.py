@@ -15,7 +15,18 @@ class Repository:
         return False if not self.get(key) else True
 
     def get(self, key, default=None):
-        return self.__items.get(key, default)
+        config = self.__items
+
+        parts = key.split(".")
+
+        for part in parts:
+            try:
+                config = config[part]
+            except:
+                config = default
+                break
+
+        return config
 
     def get_all(self):
         return self.__items
