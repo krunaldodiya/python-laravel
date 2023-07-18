@@ -20,12 +20,20 @@ class Pipeline:
 
         return self
 
+    def pipe(self, pipe):
+        self.__pipes.append(pipe)
+
+        return self
+
     def through(self, pipes):
         self.__pipes = pipes
 
         reduce(self.__manage_pipe, self.__pipes, True)
 
         return self
+
+    def pipes(self):
+        return self.__pipes
 
     def then(self, destination: callable):
         return destination(self.__output)
@@ -35,12 +43,14 @@ class Pipeline:
 
     def __manage_pipe(self, should_continue, current_pipe):
         if should_continue:
+            pipes = self.pipes()
+
             next_index = self.__current_index + 1
 
-            if next_index == len(self.__pipes):
+            if next_index == len(pipes):
                 next_pipe = lambda name: self.__output
             else:
-                next_pipe = lambda name: self.__pipes[next_index]
+                next_pipe = lambda name: pipes[next_index]
 
             output = current_pipe(self.__passable, next_pipe)
 
