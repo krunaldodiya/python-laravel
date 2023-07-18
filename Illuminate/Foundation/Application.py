@@ -245,4 +245,5 @@ class Application(Container):
             service_provider.boot()
 
     def detect_environment(self, callback):
-        pass
+        env = callback()
+        print(env)

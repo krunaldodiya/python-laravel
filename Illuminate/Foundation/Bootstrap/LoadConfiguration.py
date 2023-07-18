@@ -17,18 +17,16 @@ class LoadConfiguration:
 
         app.instance("config", config)
 
-        self.__load_configuration_files(app, config)
+        self.__load_configuration_files(config)
 
         app.detect_environment(lambda: config.get("env", "production"))
 
-    def __load_configuration_files(self, app, config):
+    def __load_configuration_files(self, config):
         files = config.get_files()
 
         for file in files:
             file_name, file_content = self.__get_info(file)
             config.set(file_name, file_content)
-
-        Log.dd(config.get("app.test.test"))
 
     def __get_info(self, file):
         file_name = file.name[:-3]
