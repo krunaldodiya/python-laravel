@@ -1,0 +1,2 @@
+class ParameterBag:
+    pass
