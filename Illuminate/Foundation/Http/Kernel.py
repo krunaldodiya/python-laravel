@@ -9,6 +9,7 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
+from Illuminate.Support.Facades.Event import Event
 
 
 if TYPE_CHECKING:
@@ -103,5 +104,9 @@ class Kernel:
         if not self.__app.has_been_bootstrapped:
             self.__app.bootstrap_with(self.bootstrappers)
 
-    def terminate(self, request: Request, response: ResponseFactory):
-        print("terminating request")
+    def __terminate(self, request: Request, response: ResponseFactory):
+        print("request", request)
+        print("response", response)
+
+    def terminate(self, *args, **kwargs):
+        Event.listen("response_sent", lambda: self.__terminate(*args, **kwargs))

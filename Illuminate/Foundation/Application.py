@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from EventDispatcher import EventDispatcher
 
 from Illuminate.Event.EventServiceProvider import EventServiceProvider
 from Illuminate.Http.Request import Request
@@ -45,6 +46,7 @@ class Application(Container):
             "request": [Request],
             "response": [ResponseFactory],
             "router": [Router],
+            "event": [EventDispatcher],
         }
 
         self.__register_base_bindings()

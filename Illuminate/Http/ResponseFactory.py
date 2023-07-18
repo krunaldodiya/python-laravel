@@ -1,5 +1,6 @@
-import asyncio
 from typing import TYPE_CHECKING, Type
+
+from Illuminate.Support.Facades.Event import Event
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
@@ -23,7 +24,7 @@ class ResponseFactory:
         return "test".encode("utf-8")
 
     def send(self):
-        pass
+        print("sending")
 
     async def send_async(self, server):
         await server.send(
@@ -42,3 +43,5 @@ class ResponseFactory:
                 "body": "test".encode("utf-8"),
             }
         )
+
+        Event.dispatch("response_sent")
