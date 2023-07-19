@@ -26,9 +26,9 @@ class Request:
         return self.params.get(param)
 
     @staticmethod
-    def capture():
-        request: Request = App.make("request")
-        server: ServerBag = App.make("server")
+    def capture(app):
+        request: Request = app.make("request")
+        server: ServerBag = app.make("server")
 
         request.server = server
 

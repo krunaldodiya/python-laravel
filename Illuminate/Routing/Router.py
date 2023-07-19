@@ -60,3 +60,6 @@ class Router:
 
     def __run_route(self, request, route):
         return None
+
+    def get_routes(self):
+        return self.routes

@@ -1,0 +1,2 @@
+class CallableDispatcher:
+    pass

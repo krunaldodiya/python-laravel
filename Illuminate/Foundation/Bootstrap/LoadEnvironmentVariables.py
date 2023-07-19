@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
 
 
-class LoadEnvironment:
+class LoadEnvironmentVariables:
     def bootstrap(self, app: Type["Application"]) -> None:
         self.__load_environment(".env", False)
 

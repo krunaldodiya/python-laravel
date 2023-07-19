@@ -26,6 +26,8 @@ class Application(Container):
     def __init__(self, base_path=None) -> None:
         super().__init__()
 
+        self.__environment = "local"
+
         self.__app_path = None
         self.__base_path = None
         self.__config_path = None
@@ -245,5 +247,4 @@ class Application(Container):
             service_provider.boot()
 
     def detect_environment(self, callback):
-        env = callback()
-        print(env)
+        self.__environment = callback()
