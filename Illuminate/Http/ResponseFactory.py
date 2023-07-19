@@ -26,8 +26,9 @@ class ResponseFactory:
     def send(self):
         pass
 
-    def set_data(self, response_body):
+    def set_content(self, response_body):
         self.__response_content = response_body
+        return self
 
     async def send_async(self, server):
         data = self.get_response_content()

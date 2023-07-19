@@ -1,9 +1,7 @@
-from importlib import import_module
 import importlib
 from typing import TYPE_CHECKING, Type
 
 from Illuminate.Config.Repository import Repository
-from Illuminate.Support.Facades.Log import Log
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application

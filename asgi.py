@@ -11,6 +11,7 @@ async def main(scope, receive, send):
     from bootstrap.app import app
 
     server: ServerBag = app.instance("server", ServerBag(scope, receive, send))
+
     response: ResponseFactory = app.make("response")
 
     import_module("public.index")

@@ -100,23 +100,30 @@ class Kernel:
     def handle(self, request: Request) -> ResponseFactory:
         self.request_started_at = datetime.now()
 
-        self.send_through_router(request)
+        response = self.send_through_router(request)
 
-        return self.__app.make("response")
+        return response
 
     def send_through_router(self, request: Request):
         self.__app.instance("request", request)
 
         self.__bootstrap()
 
-        Pipeline(self.__app).send(request).through(self.middleware).then(
-            self.__dispatch_to_router()
+        response = (
+            Pipeline(self.__app)
+            .send(request)
+            .through(self.middleware)
+            .then(self.__dispatch_to_router())
         )
+
+        return response
 
     def __dispatch_to_router(self):
         def dispatching_to_router(request):
             self.__app.instance("request", request)
-            self.__router.dispatch(request)
+            response = self.__router.dispatch(request)
+
+            return response
 
         return dispatching_to_router
 

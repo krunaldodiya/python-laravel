@@ -27,4 +27,4 @@ class Logger:
             )
 
         response = self.__app.make("response")
-        response.set_data(data)
+        response.set_content(data)
