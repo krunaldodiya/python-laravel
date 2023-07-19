@@ -30,6 +30,9 @@ class HomeController(Controller):
     def __init__(self, service: Service, database: Database) -> None:
         self.service = service
 
+    def test(self, request):
+        return "yahoo"
+
     def home(self, request):
         return View.make("home")
 

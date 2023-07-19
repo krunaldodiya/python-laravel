@@ -65,11 +65,12 @@ class Router:
 
     def __convert_to_controller_action(self, action):
         if isinstance(action, list):
-            controller, method = action
+            controller, controller_action = action
 
             return {
-                "uses": getattr(controller, method),
-                "controller": str(controller.__class__) + "@" + method,
+                "controller_action": controller_action,
+                "controller_module": f"{controller.__module__}",
+                "controller_name": f"{controller.__name__}",
             }
 
         return {"uses": action}
@@ -95,7 +96,9 @@ class Router:
             raise Exception("route not found.")
 
     def __run_route(self, request: Request, route: Route):
-        Log.dd(self)
+        response = route.run()
+
+        Log.dd(response)
 
         return None
 
