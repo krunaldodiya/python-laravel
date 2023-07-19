@@ -19,6 +19,4 @@ response.send()
 
 kernel.terminate(request, response)
 
-config = app.make("config")
-
-Log.dd(config["app"])
+Log.dd(app["router"].routes)

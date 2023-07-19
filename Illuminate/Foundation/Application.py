@@ -71,6 +71,9 @@ class Application(Container):
     def loaded_providers(self):
         return self.__loaded_providers
 
+    def __getitem__(self, key):
+        return self.get_instance(key)
+
     def bootstrap_with(self, bootstrappers):
         for bootstrapper in bootstrappers:
             self.make(bootstrapper).bootstrap(self)

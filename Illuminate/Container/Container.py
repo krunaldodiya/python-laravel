@@ -84,6 +84,9 @@ class Container(ABC):
     def get_bindings(self):
         return self.__bindings
 
+    def get_instance(self, key):
+        return self.__instances.get(key)
+
     def get_instances(self):
         return self.__instances
 

@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Type
 from Illuminate.Http.Request import Request
+from Illuminate.Routing.Route import Route
 
 from Illuminate.Routing.RouteCollection import RouteCollection
 
@@ -45,8 +46,30 @@ class Router:
     def delete(self, uri, action):
         self.__add_route(["DELETE"], uri, action)
 
+    def option(self, uri, action):
+        self.__add_route(["OPTION"], uri, action)
+
     def __add_route(self, methods, uri, action):
-        self.routes.add(self.create_route(methods, uri, action))
+        self.routes.add(self.__create_route(methods, uri, action))
+
+    def __create_route(self, methods, uri, action):
+        action = self.__convert_to_controller_action(action)
+
+        return self.__new_route(methods, uri, action)
+
+    def __new_route(self, methods, uri, action):
+        return Route(methods, uri, action).set_router(self).set_application(self.__app)
+
+    def __convert_to_controller_action(self, action):
+        if isinstance(action, list):
+            controller, method = action
+
+            return {
+                "uses": getattr(controller, method),
+                "controller": str(controller.__class__) + "@" + method,
+            }
+
+        return {"uses": action}
 
     def dispatch(self, request: Request):
         self.current_request = request
