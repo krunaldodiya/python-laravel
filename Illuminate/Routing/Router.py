@@ -3,6 +3,7 @@ from Illuminate.Http.Request import Request
 from Illuminate.Routing.Route import Route
 
 from Illuminate.Routing.RouteCollection import RouteCollection
+from Illuminate.Support.Facades.Log import Log
 
 
 if TYPE_CHECKING:
@@ -75,15 +76,27 @@ class Router:
 
     def dispatch(self, request: Request):
         self.current_request = request
+
         self.__dispatch_to_route(request)
 
-    def __dispatch_to_route(self, request):
-        self.__run_route(request, self.__find_route(request))
+    def __dispatch_to_route(self, request: Request):
+        matched_route = self.__find_matching_route(request)
 
-    def __find_route(self, request):
-        return None
+        self.current = matched_route
 
-    def __run_route(self, request, route):
+        self.__run_route(request, matched_route)
+
+    def __find_matching_route(self, request: Request):
+        matched: Route = self.routes.match(request)
+
+        if matched:
+            return matched.set_router(self).set_application(self.__app)
+        else:
+            raise Exception("route not found.")
+
+    def __run_route(self, request: Request, route: Route):
+        Log.dd(self)
+
         return None
 
     def get_routes(self):

@@ -11,7 +11,7 @@ class Request:
     def __init__(self, app: Type["Application"]) -> None:
         self.__app = app
 
-        self.server = None
+        self.server: ServerBag = None
 
         self.scheme = None
         self.query_string = None

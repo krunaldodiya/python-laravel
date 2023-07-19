@@ -114,7 +114,11 @@ class Kernel:
         )
 
     def __dispatch_to_router(self):
-        return lambda request: self.__router.dispatch(request)
+        def dispatching_to_router(request):
+            self.__app.instance("request", request)
+            self.__router.dispatch(request)
+
+        return dispatching_to_router
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped:
