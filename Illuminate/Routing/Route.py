@@ -31,9 +31,12 @@ class Route:
         return self
 
     def run(self):
-        if self.action["controller_action"]:
+        if self.action.get("controller_action"):
             return self.__run_controller()
+        else:
+            return self.__run_callable()
 
+    def __run_callable(self):
         return self.action["uses"](self.__router.current_request)
 
     def __run_controller(self):
