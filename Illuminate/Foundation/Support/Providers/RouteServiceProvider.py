@@ -1,4 +1,6 @@
-from typing import Any, Callable
+from importlib import import_module
+from typing import Callable
+from Illuminate.Support.Facades.Route import Route
 from Illuminate.Support.ServiceProvider import ServiceProvider
 
 
@@ -18,3 +20,6 @@ class RouteServiceProvider(ServiceProvider):
 
     def load_routes(self):
         self.__load_routes_using()
+
+        for registered_path in Route.get_registered_paths():
+            import_module(registered_path)

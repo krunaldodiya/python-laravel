@@ -1,9 +1,9 @@
-from importlib import import_module
 from typing import TYPE_CHECKING, Type
 
 from Illuminate.Foundation.Support.Providers.RouteServiceProvider import (
     RouteServiceProvider as ServiceProvider,
 )
+from Illuminate.Support.Facades.Route import Route
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
@@ -15,6 +15,6 @@ class RouteServiceProvider(ServiceProvider):
 
     def boot(self):
         def load_routes():
-            import_module("routes.web")
+            Route.register_path("routes.web")
 
         self.routes(load_routes)

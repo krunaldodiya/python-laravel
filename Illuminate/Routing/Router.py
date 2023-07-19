@@ -23,6 +23,8 @@ class Router:
         self.middleware_groups = {}
         self.middleware_priorities = {}
 
+        self.__registered_paths = []
+
     def middleware_group(self, key, middleware):
         self.middleware_groups[key] = middleware
         return self
@@ -86,3 +88,9 @@ class Router:
 
     def get_routes(self):
         return self.routes
+
+    def register_path(self, path: str):
+        self.__registered_paths.append(path)
+
+    def get_registered_paths(self):
+        return self.__registered_paths
