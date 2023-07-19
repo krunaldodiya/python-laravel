@@ -240,11 +240,20 @@ class Application(Container):
         return super().make(abstract, make_args)
 
     def register_configured_providers(self) -> Any:
-        print("registering")
+        config = self.make("config")
+        providers = config["app.providers"]
+
+        for provider_class in providers:
+            self.__register_provider(provider_class)
 
     def boot(self) -> Any:
         for service_provider in self.service_providers:
             service_provider.boot()
+
+            callback = service_provider.booted_callbacks.get(service_provider.__class__)
+
+            if callback:
+                callback()
 
     def detect_environment(self, callback):
         self.__environment = callback()

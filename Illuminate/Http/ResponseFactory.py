@@ -24,7 +24,7 @@ class ResponseFactory:
         return self.__response_content
 
     def send(self):
-        print("sending")
+        pass
 
     def set_data(self, response_body):
         self.__response_content = response_body

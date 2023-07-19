@@ -1,3 +1,4 @@
+from importlib import import_module
 from typing import TYPE_CHECKING, Type
 
 from Illuminate.Foundation.Support.Providers.RouteServiceProvider import (
@@ -12,8 +13,8 @@ class RouteServiceProvider(ServiceProvider):
     def __init__(self, app: Type["Application"]) -> None:
         self.__app = app
 
-    def register(self):
-        pass
-
     def boot(self):
-        pass
+        def load_routes():
+            import_module("routes.web")
+
+        self.routes(load_routes)

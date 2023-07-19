@@ -7,6 +7,9 @@ class Repository:
         self.__items: Dict[str, Any] = items
         self.__config_path: Path = config_path
 
+    def __getitem__(self, key):
+        return self.get(key)
+
     @property
     def path(self):
         return str(self.__config_path)
