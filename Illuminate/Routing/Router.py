@@ -1,9 +1,10 @@
-import types
 from typing import TYPE_CHECKING, Type
 from Illuminate.Http.Request import Request
+from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Routing.Route import Route
 
 from Illuminate.Routing.RouteCollection import RouteCollection
+from Illuminate.View.ViewFactory import ViewFactory
 
 
 if TYPE_CHECKING:
@@ -81,21 +82,38 @@ class Router:
     def dispatch(self, request: Request):
         self.current_request = request
 
-        response = self.__dispatch_to_route(request)
-
-        return response
+        return self.__dispatch_to_route(request)
 
     def __dispatch_to_route(self, request: Request):
         try:
-            matched_route = self.__find_matching_route(request)
+            self.current = self.__find_matching_route(request)
 
-            self.current = matched_route
-
-            return self.__run_route(request, matched_route)
+            return self.__run_route(request, self.current)
         except Exception as e:
             response = self.__app.make("response")
             response.set_content("route not found")
+
             return response
+
+    def __run_route(self, request: Request, route: Route):
+        content = route.run()
+
+        if isinstance(content, ResponseFactory):
+            return response
+
+        response = self.__app.make("response")
+
+        if isinstance(content, str):
+            response.set_content(content)
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "text/plain")
+
+        if isinstance(content, ViewFactory):
+            response.set_content(content.get_content())
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "text/html")
+
+        return response
 
     def __find_matching_route(self, request: Request):
         matched: Route = self.routes.match(request)
@@ -104,16 +122,6 @@ class Router:
             return matched.set_router(self).set_application(self.__app)
         else:
             raise Exception(f"<{request.path}> Route not found.")
-
-    def __run_route(self, request: Request, route: Route):
-        content = route.run()
-
-        if isinstance(content, str):
-            response = self.__app.make("response")
-
-            return response.set_content(content)
-
-        return response.set_content("")
 
     def get_routes(self):
         return self.routes

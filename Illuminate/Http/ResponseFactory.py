@@ -1,6 +1,4 @@
-from typing import TYPE_CHECKING, Type
-
-from Illuminate.Support.Facades.Event import Event
+from typing import TYPE_CHECKING, Any, Type
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
@@ -10,22 +8,34 @@ class ResponseFactory:
     def __init__(self, app: Type["Application"]) -> None:
         self.__app = app
 
-        self.__response_content = ""
+        self.__content = ""
         self.__status = "200 OK"
-        self.__response_headers = {"Content-type": "text/html"}
+        self.__headers = {"Content-type": "text/plain"}
 
     def get_status_code(self):
-        return "200 OK"
+        return self.__status
 
     def get_headers(self):
-        return [("Content-type", "text/html")]
+        return [(key, value) for key, value in self.__headers.items()]
 
-    def get_response_content(self):
-        return self.__response_content
+    def get_content(self):
+        return self.__content
+
+    def set_content(self, content: str):
+        self.__content = content
+        return self
+
+    def set_status(self, status: str):
+        self.__status = status
+        return self
+
+    def set_headers(self, key: str, value: Any):
+        self.__headers[key] = value
+        return self
 
     def send(self):
-        return [self.__response_content.encode("utf-8")]
+        request = self.__app.make("request")
 
-    def set_content(self, response_body):
-        self.__response_content = response_body
-        return self
+        request.server.start_response(self.get_status_code(), self.get_headers())
+
+        return [self.__content.encode("utf-8")]

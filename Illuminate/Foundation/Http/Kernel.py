@@ -16,7 +16,6 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
-from Illuminate.Support.Facades.Event import Event
 
 
 if TYPE_CHECKING:
@@ -100,30 +99,25 @@ class Kernel:
     def handle(self, request: Request) -> ResponseFactory:
         self.request_started_at = datetime.now()
 
-        response = self.send_through_router(request)
-
-        return response
+        return self.send_through_router(request)
 
     def send_through_router(self, request: Request):
         self.__app.instance("request", request)
 
         self.__bootstrap()
 
-        response = (
+        return (
             Pipeline(self.__app)
             .send(request)
             .through(self.middleware)
             .then(self.__dispatch_to_router())
         )
 
-        return response
-
     def __dispatch_to_router(self):
         def dispatching_to_router(request):
             self.__app.instance("request", request)
-            response = self.__router.dispatch(request)
 
-            return response
+            return self.__router.dispatch(request)
 
         return dispatching_to_router
 
@@ -132,4 +126,4 @@ class Kernel:
             self.__app.bootstrap_with(self.bootstrappers)
 
     def terminate(self, request: Request, response: ResponseFactory):
-        pass
+        print("terminating")
