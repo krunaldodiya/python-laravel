@@ -19,6 +19,8 @@ def main(environ, start_response):
 
     module = import_module(MODULE_NAME)
 
-    response = getattr(module, "response")
+    # response = getattr(module, "response")
 
-    return response
+    # return response
+
+    return ["test".encode("utf-8")]

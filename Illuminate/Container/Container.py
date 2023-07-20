@@ -26,6 +26,7 @@ class Container(ABC):
     def __init__(self) -> None:
         self.__bindings: Dict[str, Dict[str, Any]] = {}
         self.__instances: Dict[str, Any] = {}
+        self.__singletons: Dict[str, Any] = {}
         self.__resolved = {}
         self.__aliases = {}
         self.__abstract_aliases = {}
@@ -117,16 +118,21 @@ class Container(ABC):
 
     def __get_binding_if_exists(self, abstract: str, make_args: Dict[str, Any] = {}):
         binding = self.__bindings.get(abstract)
-        instance = self.__instances.get(abstract)
 
-        if binding and (not instance or not make_args):
-            shared = binding["shared"]
-            binding_resolver = binding["binding_resolver"]
+        if not binding:
+            return None
 
-            if not instance or not shared:
-                instance = self.__resolve_binding(abstract, binding_resolver, make_args)
+        binding_resolver = binding["binding_resolver"]
 
-            return instance
+        shared = binding["shared"]
+
+        if shared and (abstract in self.__singletons):
+            return self.__singletons[abstract]
+
+        instance = self.__resolve_binding(abstract, binding_resolver, make_args)
+
+        if shared:
+            self.__singletons[abstract] = instance
 
         return instance
 
