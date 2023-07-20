@@ -1,4 +1,5 @@
 import json
+from Illuminate.Http.Request import Request
 
 from Illuminate.Support.Facades.View import View
 from Illuminate.controller import Controller
@@ -30,16 +31,16 @@ class HomeController(Controller):
     def __init__(self, service: Service, database: Database) -> None:
         self.service = service
 
-    def home(self, request):
+    def home(self, request: Request):
         return View.make("home")
 
-    def create(self, request):
+    def create(self, request: Request):
         return View.make("index", {"name": "krunal"})
 
-    def store(self, request):
+    def store(self, request: Request):
         return json.dumps(request.body)
 
-    def user(self, request):
+    def user(self, request: Request):
         username = request.get("username")
 
         return {"username": username, "name": self.service.another_service.get_name()}

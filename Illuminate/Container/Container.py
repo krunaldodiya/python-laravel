@@ -155,14 +155,14 @@ class Container(ABC):
 
         if callable(binding_resolver):
             if inspect.isclass(binding_resolver):
-                dependencies = self.__get_dependencies(binding_resolver)
+                dependencies = self.get_dependencies(binding_resolver)
                 return binding_resolver(*dependencies)
 
             return binding_resolver()
 
         raise BindingResolutionException("Binding Resolution Exception")
 
-    def __get_dependencies(self, class_info):
+    def get_dependencies(self, class_info):
         args_info = inspect.getfullargspec(class_info)
 
         return [

@@ -1,3 +1,4 @@
+import types
 from typing import TYPE_CHECKING, Type
 from Illuminate.Http.Request import Request
 from Illuminate.Routing.Route import Route
@@ -71,6 +72,9 @@ class Router:
                 "controller_module": f"{controller.__module__}",
                 "controller_name": f"{controller.__name__}",
             }
+
+        if hasattr(action, "__name__") and action.__name__ == "<lambda>":
+            raise Exception("lambda function are not allowed")
 
         return {"uses": action}
 

@@ -1,4 +1,5 @@
 from importlib import import_module
+import inspect
 
 
 class Route:
@@ -38,7 +39,9 @@ class Route:
         else:
             action = self.__run_callable()
 
-        return action(self.__router.current_request)
+        dependencies = self.__app.get_dependencies(action)
+
+        return action(*dependencies)
 
     def __run_callable(self):
         return self.action["uses"]
