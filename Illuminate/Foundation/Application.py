@@ -11,16 +11,7 @@ from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
 from Illuminate.Container.Container import Container
 
-from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvider
-from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
-
 from Illuminate.Routing.Router import Router
-from Illuminate.Support.Facades.Event import Event
-
-PROVIDERS = [
-    FrameworkServiceProvider,
-    ViewServiceProvider,
-]
 
 
 class Application(Container):

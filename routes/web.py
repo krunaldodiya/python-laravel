@@ -8,7 +8,7 @@ def greetings(request: Request):
 
 
 Route.get("/", greetings)
-Route.get("/users/home", [HomeController, "home"])
+Route.get("/home", [HomeController, "home"])
 Route.get("/users", [HomeController, "create"])
 Route.post("/users", [HomeController, "store"])
 Route.get("/users/:username", [HomeController, "user"])

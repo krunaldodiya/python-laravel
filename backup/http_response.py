@@ -1,6 +1,6 @@
 import json
 
-from Illuminate.template import HtmlResponse
+from Illuminate.View.ViewFactory import HtmlResponse
 
 
 class HttpResponse:

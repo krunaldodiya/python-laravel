@@ -12,7 +12,7 @@ class EventServiceProvider(ServiceProvider):
         self.__app = app
 
     def register(self):
-        self.__app.singleton("events", lambda: Dispatcher(self))
+        self.__app.singleton("events", lambda: Dispatcher(self.__app))
 
     def boot(self):
         pass
