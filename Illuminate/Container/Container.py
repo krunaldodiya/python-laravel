@@ -113,8 +113,6 @@ class Container(ABC):
 
     def __make_instance(self, abstract, instance):
         self.__instances[abstract] = instance
-        self.__resolved[abstract] = True
-
         return instance
 
     def __get_binding_if_exists(self, abstract: str, make_args: Dict[str, Any] = {}):
@@ -154,9 +152,13 @@ class Container(ABC):
             if inspect.isclass(binding_resolver):
                 dependencies = self.get_dependencies(binding_resolver)
 
-                return binding_resolver(*dependencies)
+                instance = binding_resolver(*dependencies)
+            else:
+                instance = binding_resolver(self, **make_args)
 
-            return binding_resolver(self, **make_args)
+            self.__resolved[abstract] = True
+
+            return instance
 
         raise BindingResolutionException("Binding Resolution Exception")
 
