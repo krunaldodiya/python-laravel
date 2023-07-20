@@ -131,8 +131,5 @@ class Kernel:
         if not self.__app.has_been_bootstrapped:
             self.__app.bootstrap_with(self.bootstrappers)
 
-    def __terminate(self, request: Request, response: ResponseFactory):
-        pass
-
-    def terminate(self, *args, **kwargs):
-        Event.listen("response_sent", lambda: self.__terminate(*args, **kwargs))
+    def terminate(self, request: Request, response: ResponseFactory):
+        print("terminating")

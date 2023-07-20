@@ -1,45 +1,23 @@
-from typing import TYPE_CHECKING, Type
-from Illuminate.Http.ServerBag import ServerBag
-from Illuminate.Support.Facades.App import App
-
-
-if TYPE_CHECKING:
-    from Illuminate.Foundation.Application import Application
+from Illuminate.Http.ServerBag.WSGIServer import WSGIServer
 
 
 class Request:
-    def __init__(self, app: Type["Application"]) -> None:
-        self.__app = app
+    def __init__(self, server) -> None:
+        self.server = server
 
-        self.server: ServerBag = None
+        self.scheme = server.scheme
+        self.query_string = server.query_string
+        self.method = server.method
+        self.path = server.path
+        self.raw_path = server.raw_path
 
-        self.scheme = None
-        self.query_string = None
-        self.method = None
-        self.root_path = None
-        self.path = None
-        self.raw_path = None
-
-        self.headers = None
-
-    def get(self, param):
-        return self.params.get(param)
+        self.headers = server.headers
+        self.cookies = server.cookies
 
     @staticmethod
-    def capture(app):
-        request: Request = app.make("request")
-        server: ServerBag = app.make("server")
+    def capture():
+        return Request.create_from_base(WSGIServer.get_server())
 
-        request.server = server
-
-        request.scheme = server.scheme
-        request.query_string = server.query_string
-        request.method = server.method
-        request.root_path = server.root_path
-        request.path = server.path
-        request.raw_path = server.raw_path
-
-        request.headers = server.headers
-        request.cookies = server.cookies
-
-        return request
+    @staticmethod
+    def create_from_base(server):
+        return Request(server)

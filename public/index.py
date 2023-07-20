@@ -10,10 +10,8 @@ from bootstrap.app import app
 
 kernel: HttpKernel = app.make(Kernel, {"app": app, "router": app.make("router")})
 
-request: Request = Request.capture(app)
+request: Request = Request.capture()
 
-response: ResponseFactory = kernel.handle(request)
-
-response.send()
+response: ResponseFactory = kernel.handle(request).send()
 
 kernel.terminate(request, response)

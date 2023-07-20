@@ -24,30 +24,8 @@ class ResponseFactory:
         return self.__response_content
 
     def send(self):
-        pass
+        return [self.__response_content.encode("utf-8")]
 
     def set_content(self, response_body):
         self.__response_content = response_body
         return self
-
-    async def send_async(self, server):
-        data = self.get_response_content()
-
-        await server.send(
-            {
-                "type": "http.response.start",
-                "status": 200,
-                "headers": [
-                    [b"content-type", b"application/json"],
-                ],
-            }
-        )
-
-        await server.send(
-            {
-                "type": "http.response.body",
-                "body": data.encode("utf-8"),
-            }
-        )
-
-        Event.dispatch("response_sent")
