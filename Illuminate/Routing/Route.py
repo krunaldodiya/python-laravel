@@ -31,13 +31,17 @@ class Route:
         return self
 
     def run(self):
+        action = None
+
         if self.action.get("controller_action"):
-            return self.__run_controller()
+            action = self.__run_controller()
         else:
-            return self.__run_callable()
+            action = self.__run_callable()
+
+        return action(self.__router.current_request)
 
     def __run_callable(self):
-        return self.action["uses"](self.__router.current_request)
+        return self.action["uses"]
 
     def __run_controller(self):
         controller_module = import_module(
@@ -48,6 +52,4 @@ class Route:
 
         controller_object = self.__app.make(controller_class)
 
-        controller_action = getattr(controller_object, self.action["controller_action"])
-
-        return controller_action(self.__router.current_request)
+        return getattr(controller_object, self.action["controller_action"])
