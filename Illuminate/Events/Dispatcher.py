@@ -3,11 +3,11 @@ class Dispatcher:
         self.__app = app
         self.__listeners = {}
 
-    def dispatch(self, event):
-        callbacks = self.__listeners.get(event)
+    def dispatch(self, event, args=[]):
+        callbacks = self.__listeners.get(event, [])
 
         for callback in callbacks:
-            callback()
+            callback(**args)
 
     def listen(self, event, callback):
         self.__listeners[event] = []

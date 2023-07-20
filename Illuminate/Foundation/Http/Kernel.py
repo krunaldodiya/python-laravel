@@ -128,7 +128,7 @@ class Kernel:
         return dispatching_to_router
 
     def __bootstrap(self):
-        if not self.__app.has_been_bootstrapped:
+        if not self.__app.has_been_bootstrapped():
             self.__app.bootstrap_with(self.bootstrappers)
 
     def terminate(self, request: Request, response: ResponseFactory):

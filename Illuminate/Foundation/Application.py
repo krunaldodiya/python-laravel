@@ -15,6 +15,7 @@ from Illuminate.Providers.FrameworkServiceProvider import FrameworkServiceProvid
 from Illuminate.Providers.ViewServiceProvider import ViewServiceProvider
 
 from Illuminate.Routing.Router import Router
+from Illuminate.Support.Facades.Event import Event
 
 PROVIDERS = [
     FrameworkServiceProvider,
@@ -40,6 +41,8 @@ class Application(Container):
 
         self.__has_been_bootstrapped = False
 
+        self.__booted = False
+
         self.__service_providers = {}
 
         self.__loaded_providers = {}
@@ -60,10 +63,6 @@ class Application(Container):
         self.__register_container_aliases()
 
     @property
-    def has_been_bootstrapped(self):
-        return self.__has_been_bootstrapped
-
-    @property
     def service_providers(self):
         return [provider for provider in self.__service_providers.values()]
 
@@ -74,9 +73,20 @@ class Application(Container):
     def __getitem__(self, key):
         return self.get_instance(key)
 
+    def has_been_bootstrapped(self):
+        return self.__has_been_bootstrapped
+
+    def before_bootstraping(self, bootstrapper, callback):
+        self.make("events").listen(f"bootstraping: {bootstrapper}", callback)
+
+    def after_bootstraping(self, bootstrapper, callback):
+        self.make("events").listen(f"bootstrapped: {bootstrapper}", callback)
+
     def bootstrap_with(self, bootstrappers):
         for bootstrapper in bootstrappers:
+            self.make("events").dispatch(f"bootstraping: {bootstrapper}", [self])
             self.make(bootstrapper).bootstrap(self)
+            self.make("events").dispatch(f"bootstrapped: {bootstrapper}", [self])
 
         self.__has_been_bootstrapped = True
 
@@ -220,6 +230,9 @@ class Application(Container):
 
         provider.register()
 
+        self.mark_as_registered(base_key)
+
+    def mark_as_registered(self, base_key):
         self.__loaded_providers[base_key] = True
 
     def __register_container_aliases(self):
