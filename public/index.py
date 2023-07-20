@@ -8,21 +8,10 @@ from app.Http.Kernel import Kernel as HttpKernel
 
 from bootstrap.app import app
 
+kernel: HttpKernel = app.make(Kernel, {"router": app.make("router")})
 
-class Test:
-    pass
+request: Request = Request.capture()
 
+response: ResponseFactory = kernel.handle(request).send()
 
-app.singleton("test", lambda app: Test())
-
-test = app.make("test")
-
-print(test)
-
-# kernel: HttpKernel = app.make(Kernel, {"router": app.make("router")})
-
-# request: Request = Request.capture()
-
-# response: ResponseFactory = kernel.handle(request).send()
-
-# kernel.terminate(request, response)
+kernel.terminate(request, response)
