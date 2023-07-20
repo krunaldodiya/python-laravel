@@ -15,5 +15,3 @@ request: Request = Request.capture()
 response: ResponseFactory = kernel.handle(request).send()
 
 kernel.terminate(request, response)
-
-print(app.get_instances())

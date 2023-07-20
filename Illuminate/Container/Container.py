@@ -139,7 +139,7 @@ class Container(ABC):
         valid_class_path = self.__validate_class_string(abstract)
 
         if not valid_class_path:
-            raise AttributeNotFound("Attribute not found.")
+            raise AttributeNotFound(f"class {abstract} not found.")
 
         module_path, class_name = abstract.rsplit(".", 1)
 
