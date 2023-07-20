@@ -132,4 +132,4 @@ class Kernel:
             self.__app.bootstrap_with(self.bootstrappers)
 
     def terminate(self, request: Request, response: ResponseFactory):
-        print("terminating")
+        pass

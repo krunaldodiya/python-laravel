@@ -4,7 +4,7 @@ from Illuminate.Support.Facades.Route import Route
 
 
 def greetings(request: Request):
-    return "test"
+    return request.method
 
 
 Route.get("/", greetings)

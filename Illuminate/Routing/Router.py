@@ -86,11 +86,16 @@ class Router:
         return response
 
     def __dispatch_to_route(self, request: Request):
-        matched_route = self.__find_matching_route(request)
+        try:
+            matched_route = self.__find_matching_route(request)
 
-        self.current = matched_route
+            self.current = matched_route
 
-        return self.__run_route(request, matched_route)
+            return self.__run_route(request, matched_route)
+        except Exception as e:
+            response = self.__app.make("response")
+            response.set_content("route not found")
+            return response
 
     def __find_matching_route(self, request: Request):
         matched: Route = self.routes.match(request)
@@ -98,7 +103,7 @@ class Router:
         if matched:
             return matched.set_router(self).set_application(self.__app)
         else:
-            raise Exception("route not found.")
+            raise Exception(f"<{request.path}> Route not found.")
 
     def __run_route(self, request: Request, route: Route):
         content = route.run()

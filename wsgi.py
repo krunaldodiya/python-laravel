@@ -1,12 +1,24 @@
+import sys
+
+from importlib import import_module
+
 from Illuminate.Http.ServerBag.WSGIServer import WSGIServer
+
+MODULE_NAME = "public.index"
+
+
+def clear_module_cache(module_name):
+    if module_name in sys.modules:
+        del sys.modules[module_name]
 
 
 def main(environ, start_response):
-    if environ.get("HTTP_REFERER"):
-        return []
+    clear_module_cache(MODULE_NAME)
 
     WSGIServer.create_server(environ, start_response)
 
-    from public.index import response
+    module = import_module(MODULE_NAME)
+
+    response = getattr(module, "response")
 
     return response
