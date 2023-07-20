@@ -47,9 +47,7 @@ class Container(ABC):
             if instance:
                 return instance
 
-            binding_resolver = self.__get_class_if_exists(abstract)
-
-            instance = self.__resolve_binding(abstract, binding_resolver, make_args)
+            instance = self.__get_class_if_exists(abstract, make_args)
 
             return instance
         except Exception as e:
@@ -139,7 +137,14 @@ class Container(ABC):
     def __validate_class_string(self, abstract: str):
         return bool(re.match(r"^[\w]+\.[\w]+\.[A-Z][\w.]*$", abstract))
 
-    def __get_class_if_exists(self, abstract: str) -> Any:
+    def __get_class_if_exists(
+        self, abstract: str, make_args: Dict[str, Any] = {}
+    ) -> Any:
+        instance = self.get_instance(abstract)
+
+        if instance and not make_args:
+            return instance
+
         valid_class_path = self.__validate_class_string(abstract)
 
         if not valid_class_path:
@@ -149,7 +154,11 @@ class Container(ABC):
 
         module = import_module(module_path)
 
-        return getattr(module, class_name)
+        binding_resolver = getattr(module, class_name)
+
+        instance = self.__resolve_binding(abstract, binding_resolver, make_args)
+
+        return instance
 
     def __resolve_binding(
         self, abstract: str, binding_resolver: Any, make_args: Dict[str, Any] = {}
