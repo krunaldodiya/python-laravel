@@ -14,7 +14,7 @@ class ViewServiceProvider(ServiceProvider):
         self.__app = app
 
     def register(self):
-        self.__app.singleton("view", lambda: ViewFactory(self.__app))
+        self.__app.singleton("view", lambda app: ViewFactory(self.__app))
 
     def boot(self):
         pass

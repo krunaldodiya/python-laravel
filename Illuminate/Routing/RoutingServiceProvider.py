@@ -37,7 +37,7 @@ class RoutingServiceProvider(ServiceProvider):
 
     def __register_router(self):
         self.__app.singleton(
-            "router", lambda: Router(self.__app, self.__app.make("events"))
+            "router", lambda app: Router(self.__app, self.__app.make("events"))
         )
 
     def __register_url_generator(self):
@@ -55,23 +55,23 @@ class RoutingServiceProvider(ServiceProvider):
         self.__app.singleton("url", generator)
 
     def __register_redirector(self):
-        self.__app.singleton("redirect", lambda: Router(self.__app.make("url")))
+        self.__app.singleton("redirect", lambda app: Router(self.__app.make("url")))
 
     def __register_http_request(self):
-        self.__app.singleton("request", lambda: Request(self.__app))
+        self.__app.singleton("request", lambda app: Request(self.__app))
 
     def __register_http_response(self):
-        self.__app.singleton("response", lambda: ResponseFactory(self.__app))
+        self.__app.singleton("response", lambda app: ResponseFactory(self.__app))
 
     def __register_response_factory(self):
         pass
 
     def __register_callable_dispatcher(self):
         self.__app.singleton(
-            CallableDispatcherContract, lambda: CallableDispatcher(self.__app)
+            CallableDispatcherContract, lambda app: CallableDispatcher(self.__app)
         )
 
     def __register_controller_dispatcher(self):
         self.__app.singleton(
-            ControllerDispatcherContract, lambda: ControllerDispatcher(self.__app)
+            ControllerDispatcherContract, lambda app: ControllerDispatcher(self.__app)
         )

@@ -48,7 +48,9 @@ class Container(ABC):
 
             binding_resolver = self.__get_class_if_exists(abstract)
 
-            return self.__resolve_binding(binding_resolver, make_args)
+            instance = self.__resolve_binding(binding_resolver, make_args)
+
+            return instance
         except Exception as e:
             raise Exception(e)
 
@@ -150,15 +152,13 @@ class Container(ABC):
     def __resolve_binding(
         self, binding_resolver: Any, make_args: Dict[str, Any] = {}
     ) -> Any:
-        if make_args:
-            return binding_resolver(**make_args)
-
         if callable(binding_resolver):
             if inspect.isclass(binding_resolver):
                 dependencies = self.get_dependencies(binding_resolver)
+
                 return binding_resolver(*dependencies)
 
-            return binding_resolver()
+            return binding_resolver(self, **make_args)
 
         raise BindingResolutionException("Binding Resolution Exception")
 

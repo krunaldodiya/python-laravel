@@ -12,7 +12,7 @@ class LogServiceProvider(ServiceProvider):
         self.__app = app
 
     def register(self):
-        self.__app.singleton("log", lambda: LogManager(self.__app))
+        self.__app.singleton("log", lambda app: LogManager(self.__app))
 
     def boot(self):
         pass
