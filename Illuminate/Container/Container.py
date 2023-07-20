@@ -45,7 +45,7 @@ class Container(ABC):
             instance = self.__get_binding_if_exists(abstract, make_args)
 
             if instance:
-                return self.__make_instance(abstract, instance)
+                return instance
 
             binding_resolver = self.__get_class_if_exists(abstract)
 
