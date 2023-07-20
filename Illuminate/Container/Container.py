@@ -31,12 +31,12 @@ class Container(ABC):
         self.__abstract_aliases = {}
 
     @abstractmethod
-    def bind(self, key: str, binding_resolver: Any) -> None:
-        return self.__bind(key, binding_resolver, False)
+    def bind(self, abstract: str, binding_resolver: Any) -> None:
+        return self.__bind(abstract, binding_resolver, False)
 
     @abstractmethod
-    def singleton(self, key: str, binding_resolver: Any) -> None:
-        return self.__bind(key, binding_resolver, True)
+    def singleton(self, abstract: str, binding_resolver: Any) -> None:
+        return self.__bind(abstract, binding_resolver, True)
 
     @abstractmethod
     def make(self, abstract: str, make_args: Dict[str, Any] = {}) -> Any:
@@ -48,7 +48,7 @@ class Container(ABC):
 
             binding_resolver = self.__get_class_if_exists(abstract)
 
-            instance = self.__resolve_binding(binding_resolver, make_args)
+            instance = self.__resolve_binding(abstract, binding_resolver, make_args)
 
             return instance
         except Exception as e:
@@ -104,11 +104,9 @@ class Container(ABC):
 
         raise Exception("Invalid key type")
 
-    def __bind(self, key: str, binding_resolver: Any, shared: bool):
-        base_key = self.get_base_key(key)
-
-        self.__bindings[base_key] = {
-            "base_key": base_key,
+    def __bind(self, abstract: str, binding_resolver: Any, shared: bool):
+        self.__bindings[abstract] = {
+            "abstract": abstract,
             "binding_resolver": binding_resolver,
             "shared": shared,
         }
@@ -119,38 +117,38 @@ class Container(ABC):
 
         return instance
 
-    def __get_binding_if_exists(self, base_key: str, make_args: Dict[str, Any] = {}):
-        binding = self.__bindings.get(base_key)
-        instance = self.__instances.get(base_key)
+    def __get_binding_if_exists(self, abstract: str, make_args: Dict[str, Any] = {}):
+        binding = self.__bindings.get(abstract)
+        instance = self.__instances.get(abstract)
 
         if binding and (not instance or not make_args):
             shared = binding["shared"]
             binding_resolver = binding["binding_resolver"]
 
             if not instance or not shared:
-                instance = self.__resolve_binding(binding_resolver, make_args)
+                instance = self.__resolve_binding(abstract, binding_resolver, make_args)
 
             return instance
 
         return instance
 
-    def __validate_class_string(self, base_key: str):
-        return bool(re.match(r"^[\w]+\.[\w]+\.[A-Z][\w.]*$", base_key))
+    def __validate_class_string(self, abstract: str):
+        return bool(re.match(r"^[\w]+\.[\w]+\.[A-Z][\w.]*$", abstract))
 
-    def __get_class_if_exists(self, base_key: str) -> Any:
-        valid_class_path = self.__validate_class_string(base_key)
+    def __get_class_if_exists(self, abstract: str) -> Any:
+        valid_class_path = self.__validate_class_string(abstract)
 
         if not valid_class_path:
             raise AttributeNotFound("Attribute not found.")
 
-        module_path, class_name = base_key.rsplit(".", 1)
+        module_path, class_name = abstract.rsplit(".", 1)
 
         module = import_module(module_path)
 
         return getattr(module, class_name)
 
     def __resolve_binding(
-        self, binding_resolver: Any, make_args: Dict[str, Any] = {}
+        self, abstract: str, binding_resolver: Any, make_args: Dict[str, Any] = {}
     ) -> Any:
         if callable(binding_resolver):
             if inspect.isclass(binding_resolver):
