@@ -1,8 +1,7 @@
 from typing import TYPE_CHECKING, Type
 
-from Illuminate.Foundation.Support.Providers.EventServiceProvider import (
-    EventServiceProvider as ServiceProvider,
-)
+from Illuminate.Support.ServiceProvider import ServiceProvider
+
 
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application

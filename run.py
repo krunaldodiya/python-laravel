@@ -3,7 +3,11 @@ from wsgi import app
 
 
 def run():
-    run_simple(application=app, hostname="127.0.0.1", port=3000)
+    run_simple(
+        hostname="127.0.0.1",
+        port=3000,
+        application=app,
+    )
 
 
 if __name__ == "__main__":

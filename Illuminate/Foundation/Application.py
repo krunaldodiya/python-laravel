@@ -30,9 +30,11 @@ class Application(Container):
         self.__lang_path = None
         self.__bootstrap_path = None
 
-        self.__has_been_bootstrapped = False
-
         self.__booted = False
+        self.__booting_callbacks = []
+        self.__booted_callbacks = []
+
+        self.__has_been_bootstrapped = False
 
         self.__service_providers = {}
 
@@ -63,6 +65,9 @@ class Application(Container):
 
     def __getitem__(self, key):
         return self.get_instance(key)
+
+    def is_booted(self):
+        return self.__booted
 
     def has_been_bootstrapped(self):
         return self.__has_been_bootstrapped
@@ -199,30 +204,64 @@ class Application(Container):
         self.instance("path.lang", self.lang_path())
         self.instance("path.bootstrap", self.bootstrap_path())
 
+        self.use_bootstrap_path(self.bootstrap_path())
+        self.use_lang_path(self.lang_path())
+
     def __register_base_bindings(self):
         self.instance("app", self)
         self.instance(Container, self)
 
     def __register_base_providers(self):
-        self.__register_provider(EventServiceProvider)
-        self.__register_provider(LogServiceProvider)
-        self.__register_provider(RoutingServiceProvider)
+        self.register(EventServiceProvider)
+        self.register(LogServiceProvider)
+        self.register(RoutingServiceProvider)
 
-    def __register_provider(self, provider_class):
+    def register_configured_providers(self) -> Any:
+        config = self.make("config")
+        providers = config["app.providers"]
+
+        for provider_class in providers:
+            self.register(provider_class)
+
+    def register(self, provider_class):
         base_key = self.get_base_key(provider_class)
-
-        provider = provider_class(self)
 
         registered = self.get_provider(base_key)
 
         if registered:
             return registered
 
+        provider = provider_class(self)
+
         self.__service_providers[base_key] = provider
 
         provider.register()
 
         self.mark_as_registered(base_key)
+
+        if self.is_booted():
+            self.boot_provider(provider)
+
+        return provider
+
+    def boot_provider(self, service_provider) -> Any:
+        service_provider.boot()
+
+    def boot(self) -> Any:
+        if self.is_booted():
+            return
+
+        self.fire_app_callbacks(self.__booting_callbacks)
+
+        for service_provider in self.service_providers:
+            self.boot_provider(service_provider)
+
+        self.fire_app_callbacks(self.__booted_callbacks)
+
+        self.__booted = True
+
+    def fire_app_callbacks(self, callbacks):
+        pass
 
     def mark_as_registered(self, base_key):
         self.__loaded_providers[base_key] = True
@@ -243,22 +282,6 @@ class Application(Container):
 
     def make(self, *args, **kwargs) -> Any:
         return super().make(*args, **kwargs)
-
-    def register_configured_providers(self) -> Any:
-        config = self.make("config")
-        providers = config["app.providers"]
-
-        for provider_class in providers:
-            self.__register_provider(provider_class)
-
-    def boot(self) -> Any:
-        for service_provider in self.service_providers:
-            service_provider.boot()
-
-            callback = service_provider.booted_callbacks.get(service_provider.__class__)
-
-            if callback:
-                callback()
 
     def detect_environment(self, callback):
         self.__environment = callback()
