@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Events.EventServiceProvider import EventServiceProvider
@@ -30,11 +30,11 @@ class Application(Container):
         self.__lang_path = None
         self.__bootstrap_path = None
 
+        self.__has_been_bootstrapped = False
+
         self.__booted = False
         self.__booting_callbacks = []
         self.__booted_callbacks = []
-
-        self.__has_been_bootstrapped = False
 
         self.__service_providers = {}
 
@@ -223,6 +223,22 @@ class Application(Container):
         for provider_class in providers:
             self.register(provider_class)
 
+    def boot(self) -> Any:
+        if self.is_booted():
+            return
+
+        self.fire_app_callbacks(self.__booting_callbacks)
+
+        for service_provider in self.service_providers:
+            self.boot_provider(service_provider)
+
+        self.fire_app_callbacks(self.__booted_callbacks)
+
+        self.__booted = True
+
+    def fire_app_callbacks(self, callbacks):
+        pass
+
     def register(self, provider_class):
         base_key = self.get_base_key(provider_class)
 
@@ -245,23 +261,9 @@ class Application(Container):
         return provider
 
     def boot_provider(self, service_provider) -> Any:
+        service_provider.call_booting_callbacks()
         service_provider.boot()
-
-    def boot(self) -> Any:
-        if self.is_booted():
-            return
-
-        self.fire_app_callbacks(self.__booting_callbacks)
-
-        for service_provider in self.service_providers:
-            self.boot_provider(service_provider)
-
-        self.fire_app_callbacks(self.__booted_callbacks)
-
-        self.__booted = True
-
-    def fire_app_callbacks(self, callbacks):
-        pass
+        service_provider.call_booted_callbacks()
 
     def mark_as_registered(self, base_key):
         self.__loaded_providers[base_key] = True
