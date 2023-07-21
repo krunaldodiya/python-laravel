@@ -1,7 +1,10 @@
-import inspect
-from Illuminate.Http.Request import Request
+from Illuminate.Foundation.Application import Application
 
 
-class Hello:
-    def test(self, request: Request) -> None:
-        pass
+app = Application()
+
+test = app.instance("test", "hello")
+another = app.make("test")
+
+print(test)
+print(another)

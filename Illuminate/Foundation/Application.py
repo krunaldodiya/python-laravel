@@ -234,23 +234,14 @@ class Application(Container):
     def get_provider(self, base_key):
         return self.__service_providers.get(base_key)
 
-    def bind(self, key: str, binding_resolver: Any) -> None:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def bind(self, *args, **kwargs) -> None:
+        return super().bind(*args, **kwargs)
 
-        return super().bind(abstract, binding_resolver)
+    def singleton(self, *args, **kwargs) -> None:
+        return super().singleton(*args, **kwargs)
 
-    def singleton(self, key: str, binding_resolver: Any) -> None:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
-
-        return super().singleton(abstract, binding_resolver)
-
-    def make(self, key: str, make_args: Dict[str, Any] = {}) -> Any:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
-
-        return super().make(abstract, make_args)
+    def make(self, *args, **kwargs) -> Any:
+        return super().make(*args, **kwargs)
 
     def register_configured_providers(self) -> Any:
         config = self.make("config")
