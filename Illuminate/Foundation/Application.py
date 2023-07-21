@@ -237,7 +237,8 @@ class Application(Container):
         self.__booted = True
 
     def fire_app_callbacks(self, callbacks):
-        pass
+        for callback in callbacks:
+            callback(self)
 
     def register(self, provider_class):
         base_key = self.get_base_key(provider_class)
@@ -264,6 +265,15 @@ class Application(Container):
         service_provider.call_booting_callbacks()
         service_provider.boot()
         service_provider.call_booted_callbacks()
+
+    def booting(self, callback):
+        self.__booting_callbacks.append(callback)
+
+    def booted(self, callback):
+        self.__booted_callbacks.append(callback)
+
+        if self.is_booted():
+            callback(self)
 
     def mark_as_registered(self, base_key):
         self.__loaded_providers[base_key] = True
