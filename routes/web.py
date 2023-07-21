@@ -7,7 +7,13 @@ def greetings(request: Request):
     return request.method
 
 
+def test(request: Request):
+    return "welcome"
+
+
 Route.get("/", greetings)
+Route.get("/test", test)
+
 Route.get("/home", [HomeController, "home"])
 Route.get("/users", [HomeController, "create"])
 Route.post("/users", [HomeController, "store"])

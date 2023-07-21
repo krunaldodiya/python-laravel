@@ -16,7 +16,7 @@ class RouteCollection:
 
         self.all_routes[route.uri] = route
 
-    def match(self, request: Request) -> None:
+    def match(self, request: Request):
         routes = [
             route for route in self.routes.get(request.server.method, {}).values()
         ]
@@ -24,15 +24,15 @@ class RouteCollection:
         return self.__match_against_routes(request, routes)
 
     def __match_against_routes(self, request: Request, routes: List[Route]):
-        matched = None
+        matched_routes = []
 
         for route in routes:
-            route = self.__run_match(request, route)
+            matched = self.__run_match(request, route)
 
-            if route:
-                matched = route
+            if matched:
+                matched_routes.append(matched)
 
-        return matched
+        return matched_routes[-1] if matched_routes else None
 
     def __run_match(self, request: Request, route: Route):
         pattern = re.escape(route.uri)

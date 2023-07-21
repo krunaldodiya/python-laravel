@@ -23,14 +23,17 @@ class ResponseFactory:
 
     def set_content(self, content: str):
         self.__content = content
+
         return self
 
     def set_status(self, status: str):
         self.__status = status
+
         return self
 
     def set_headers(self, key: str, value: Any):
         self.__headers[key] = value
+
         return self
 
     def send(self):

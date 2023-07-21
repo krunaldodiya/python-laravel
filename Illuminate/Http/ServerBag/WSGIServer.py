@@ -21,7 +21,9 @@ class WSGIServer:
 
     @staticmethod
     def create_server(environ, start_response):
-        WSGIServer.__server = WSGIServer(environ, start_response)
+        server = WSGIServer(environ, start_response)
+        WSGIServer.__server = server
+        return server
 
     @staticmethod
     def get_server():

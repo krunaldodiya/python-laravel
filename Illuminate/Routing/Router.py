@@ -90,38 +90,47 @@ class Router:
 
             return self.__run_route(request, self.current)
         except Exception as e:
-            response = self.__app.make("response")
-            response.set_content("route not found")
-
-            return response
+            raise Exception(e)
 
     def __run_route(self, request: Request, route: Route):
-        content = route.run()
+        try:
+            if not route:
+                response = self.__app.make("response")
 
-        if isinstance(content, ResponseFactory):
+                response.set_content("Route not found")
+                response.set_status("404 NOT_FOUND")
+                response.set_headers("Content-Type", "text/plain")
+
+                return response
+
+            content = route.run()
+
+            if isinstance(content, ResponseFactory):
+                return response
+
+            response = self.__app.make("response")
+
+            if isinstance(content, str):
+                response.set_content(content)
+                response.set_status("200 OK")
+                response.set_headers("Content-Type", "text/plain")
+
+            if isinstance(content, ViewFactory):
+                response.set_content(content.get_content())
+                response.set_status("200 OK")
+                response.set_headers("Content-Type", "text/html")
+
             return response
-
-        response = self.__app.make("response")
-
-        if isinstance(content, str):
-            response.set_content(content)
-            response.set_status("200 OK")
-            response.set_headers("Content-Type", "text/plain")
-
-        if isinstance(content, ViewFactory):
-            response.set_content(content.get_content())
-            response.set_status("200 OK")
-            response.set_headers("Content-Type", "text/html")
-
-        return response
+        except Exception as e:
+            print(e)
 
     def __find_matching_route(self, request: Request):
-        matched: Route = self.routes.match(request)
+        matched_route: Route = self.routes.match(request)
 
-        if matched:
-            return matched.set_router(self).set_application(self.__app)
+        if matched_route:
+            return matched_route.set_router(self).set_application(self.__app)
         else:
-            raise Exception(f"<{request.path}> Route not found.")
+            return None
 
     def get_routes(self):
         return self.routes

@@ -193,7 +193,7 @@ class Container(ABC):
         args_info = getfullargspec(class_info)
 
         return [
-            self.__make(args_info.annotations[arg])
+            self.make(args_info.annotations[arg])
             for arg in args_info.args
             if arg != "self"
         ]
