@@ -1,17 +1,18 @@
 from Illuminate.Http.Request import Request
+from Illuminate.Support.Facades.Redirect import Redirect
 from app.Http.Controllers.HomeController import HomeController
 from Illuminate.Support.Facades.Route import Route
 
 
-def greetings(request: Request):
+def home(request: Request):
     return request.method
 
 
 def test(request: Request):
-    return "welcome"
+    return Redirect.to("/home")
 
 
-Route.get("/", greetings)
+Route.get("/", home)
 Route.get("/test", test)
 
 Route.get("/home", [HomeController, "home"])

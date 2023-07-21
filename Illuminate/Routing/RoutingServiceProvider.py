@@ -7,6 +7,7 @@ from Illuminate.Routing.Contracts.ControllerDispatcher import (
     ControllerDispatcher as ControllerDispatcherContract,
 )
 from Illuminate.Routing.ControllerDispatcher import ControllerDispatcher
+from Illuminate.Routing.Redirector import Redirector
 from Illuminate.Routing.UrlGenerator import UrlGenerator
 
 from Illuminate.Support.ServiceProvider import ServiceProvider
@@ -41,7 +42,7 @@ class RoutingServiceProvider(ServiceProvider):
         )
 
     def __register_url_generator(self):
-        def generator():
+        def generator(app):
             router = self.__app.make("router")
             request = self.__app.make("request")
             config = self.__app.make("config")
@@ -55,7 +56,9 @@ class RoutingServiceProvider(ServiceProvider):
         self.__app.singleton("url", generator)
 
     def __register_redirector(self):
-        self.__app.singleton("redirect", lambda app: Router(self.__app.make("url")))
+        self.__app.singleton(
+            "redirect", lambda app: Redirector(self.__app, self.__app.make("url"))
+        )
 
     def __register_http_request(self):
         self.__app.singleton("request", lambda app: Request(self.__app))

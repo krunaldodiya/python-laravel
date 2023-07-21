@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Type
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
+from Illuminate.Routing.Redirector import Redirector
 from Illuminate.Routing.Route import Route
 
 from Illuminate.Routing.RouteCollection import RouteCollection
@@ -10,6 +11,10 @@ from Illuminate.View.ViewFactory import ViewFactory
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
     from Illuminate.Events.Dispatcher import Dispatcher
+
+
+class RouteNotFound(Exception):
+    pass
 
 
 class Router:
@@ -89,40 +94,37 @@ class Router:
             self.current = self.__find_matching_route(request)
 
             return self.__run_route(request, self.current)
-        except Exception as e:
-            raise Exception(e)
-
-    def __run_route(self, request: Request, route: Route):
-        try:
-            if not route:
-                response = self.__app.make("response")
-
-                response.set_content("Route not found")
-                response.set_status("404 NOT_FOUND")
-                response.set_headers("Content-Type", "text/plain")
-
-                return response
-
-            content = route.run()
-
-            if isinstance(content, ResponseFactory):
-                return response
-
+        except RouteNotFound:
             response = self.__app.make("response")
-
-            if isinstance(content, str):
-                response.set_content(content)
-                response.set_status("200 OK")
-                response.set_headers("Content-Type", "text/plain")
-
-            if isinstance(content, ViewFactory):
-                response.set_content(content.get_content())
-                response.set_status("200 OK")
-                response.set_headers("Content-Type", "text/html")
+            response.set_content("Route not found")
+            response.set_status("404 NOT_FOUND")
+            response.set_headers("Content-Type", "text/plain")
 
             return response
-        except Exception as e:
-            print(e)
+
+    def __run_route(self, request: Request, route: Route):
+        content = route.run()
+
+        if isinstance(content, ResponseFactory):
+            return response
+        elif isinstance(content, str):
+            response = self.__app.make("response")
+            response.set_content(content)
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "text/plain")
+            return response
+        elif isinstance(content, ViewFactory):
+            response = self.__app.make("response")
+            response.set_content(content.get_content())
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "text/html")
+            return response
+        elif isinstance(content, Redirector):
+            response = self.__app.make("response")
+            response.set_content("Redirecting")
+            response.set_status("302 FOUND")
+            response.set_headers("Location", content.url)
+            return response
 
     def __find_matching_route(self, request: Request):
         matched_route: Route = self.routes.match(request)
@@ -130,7 +132,7 @@ class Router:
         if matched_route:
             return matched_route.set_router(self).set_application(self.__app)
         else:
-            return None
+            raise RouteNotFound("Route not found")
 
     def get_routes(self):
         return self.routes
