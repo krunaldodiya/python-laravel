@@ -254,7 +254,7 @@ class Application(Container):
 
         provider.register()
 
-        self.mark_as_registered(base_key)
+        self.__mark_as_registered(base_key)
 
         if self.is_booted():
             self.boot_provider(provider)
@@ -275,7 +275,7 @@ class Application(Container):
         if self.is_booted():
             callback(self)
 
-    def mark_as_registered(self, base_key):
+    def __mark_as_registered(self, base_key):
         self.__loaded_providers[base_key] = True
 
     def __register_container_aliases(self):
