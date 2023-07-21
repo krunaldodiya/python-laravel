@@ -81,8 +81,9 @@ class Application(Container):
 
         self.__has_been_bootstrapped = True
 
-    def set_base_path(self, base_path):
+    def set_base_path(self, base_path: Path):
         self.__base_path = base_path
+
         self.__bind_path_in_container()
 
         return self
