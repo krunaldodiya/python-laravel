@@ -49,7 +49,7 @@ class Container(ABC):
 
     def __make(self, abstract: str, make_args: Dict[str, Any] = {}) -> Any:
         try:
-            instance = self.__resolve_if_exists(abstract, make_args)
+            instance = self.__resolve_binding_if_exists(abstract, make_args)
 
             if instance:
                 return instance
@@ -129,7 +129,9 @@ class Container(ABC):
         self.__instances[abstract] = instance
         return instance
 
-    def __resolve_if_exists(self, abstract: str, make_args: Dict[str, Any] = {}):
+    def __resolve_binding_if_exists(
+        self, abstract: str, make_args: Dict[str, Any] = {}
+    ):
         binding = self.__bindings.get(abstract)
 
         if not binding:
@@ -142,7 +144,7 @@ class Container(ABC):
         if shared and (abstract in self.__instances):
             return self.__instances[abstract]
 
-        instance = self.__resolve(abstract, binding_resolver, make_args)
+        instance = self.__resolve(abstract, binding_resolver, make_args, True)
 
         if shared:
             self.__instances[abstract] = instance
@@ -167,36 +169,34 @@ class Container(ABC):
 
             binding_resolver = getattr(module, class_name)
 
-            instance = self.__resolve(abstract, binding_resolver, make_args)
+            instance = self.__resolve(abstract, binding_resolver, make_args, False)
 
             return instance
         except Exception as e:
             raise Exception(e)
 
     def __resolve(
-        self, abstract: str, binding_resolver: Any, make_args: Dict[str, Any] = {}
+        self,
+        abstract: str,
+        binding_resolver: Any,
+        make_args: Dict[str, Any] = {},
+        binding_exists: bool = False,
     ) -> Any:
         if callable(binding_resolver):
-            get_make_args = [make_args for make_args in make_args.values()]
-
-            if isclass(binding_resolver):
-                dependencies = (
-                    make_args
-                    if get_make_args
-                    else self.get_dependencies(binding_resolver, make_args)
-                )
-
-                instance = binding_resolver(*dependencies)
+            if binding_exists:
+                instance = binding_resolver(self, **make_args)
+            elif make_args:
+                instance = binding_resolver(**make_args)
             else:
-                instance = binding_resolver(self, *get_make_args)
+                dependencies = self.get_dependencies(binding_resolver)
+                instance = binding_resolver(*dependencies)
 
             self.__resolved[abstract] = True
-
             return instance
 
         raise BindingResolutionException("Binding Resolution Exception")
 
-    def get_dependencies(self, class_info, make_args: Dict[str, Any] = {}):
+    def get_dependencies(self, class_info):
         args_info = getfullargspec(class_info)
 
         return [
