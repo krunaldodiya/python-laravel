@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from typing import Any, Dict, TypeVar
 from inspect import isclass, getfullargspec
-from re import match
 
 
 class AttributeNotFound(Exception):
@@ -177,18 +176,14 @@ class Container(ABC):
         self, abstract: str, binding_resolver: Any, make_args: Dict[str, Any] = {}
     ) -> Any:
         if callable(binding_resolver):
-            get_make_args = [make_args for make_args in make_args.values()]
+            dependencies = (
+                make_args if make_args else self.get_dependencies(binding_resolver)
+            )
 
             if isclass(binding_resolver):
-                dependencies = (
-                    make_args
-                    if get_make_args
-                    else self.get_dependencies(binding_resolver, make_args)
-                )
-
-                instance = binding_resolver(*dependencies)
+                instance = binding_resolver(**dependencies)
             else:
-                instance = binding_resolver(self, *get_make_args)
+                instance = binding_resolver(self, **make_args)
 
             self.__resolved[abstract] = True
 
@@ -196,11 +191,11 @@ class Container(ABC):
 
         raise BindingResolutionException("Binding Resolution Exception")
 
-    def get_dependencies(self, class_info, make_args: Dict[str, Any] = {}):
-        args_info = getfullargspec(class_info)
+    def get_dependencies(self, handler):
+        args_info = getfullargspec(handler)
 
-        return [
-            self.make(args_info.annotations[arg])
+        return {
+            arg: self.make(args_info.annotations[arg])
             for arg in args_info.args
             if arg != "self"
-        ]
+        }

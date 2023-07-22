@@ -37,12 +37,13 @@ class RoutingServiceProvider(ServiceProvider):
         pass
 
     def __register_router(self):
-        self.__app.singleton(
-            "router", lambda app: Router(self.__app, self.__app.make("events"))
-        )
+        def lambda_function(app: Type["Application"]):
+            return Router(self.__app, self.__app.make("events"))
+
+        self.__app.singleton("router", lambda_function)
 
     def __register_url_generator(self):
-        def generator(app):
+        def lambda_function(app: Type["Application"]):
             router = self.__app.make("router")
             request = self.__app.make("request")
             config = self.__app.make("config")
@@ -53,28 +54,37 @@ class RoutingServiceProvider(ServiceProvider):
 
             return UrlGenerator(routes, request, config["app.asset_url"])
 
-        self.__app.singleton("url", generator)
+        self.__app.singleton("url", lambda_function)
 
     def __register_redirector(self):
-        self.__app.singleton(
-            "redirect", lambda app: Redirector(self.__app, self.__app.make("url"))
-        )
+        def lambda_function(app: Type["Application"]):
+            return Redirector(self.__app, self.__app.make("url"))
+
+        self.__app.singleton("redirect", lambda_function)
 
     def __register_http_request(self):
-        self.__app.singleton("request", lambda app: Request(self.__app))
+        def lambda_function(app: Type["Application"]):
+            return Request(self.__app)
+
+        self.__app.singleton("request", lambda_function)
 
     def __register_http_response(self):
-        self.__app.singleton("response", lambda app: ResponseFactory(self.__app))
+        def lambda_function(app: Type["Application"]):
+            return ResponseFactory(self.__app)
+
+        self.__app.singleton("response", lambda_function)
 
     def __register_response_factory(self):
         pass
 
     def __register_callable_dispatcher(self):
-        self.__app.singleton(
-            CallableDispatcherContract, lambda app: CallableDispatcher(self.__app)
-        )
+        def lambda_function(app: Type["Application"]):
+            return CallableDispatcher(self.__app)
+
+        self.__app.singleton(CallableDispatcherContract, lambda_function)
 
     def __register_controller_dispatcher(self):
-        self.__app.singleton(
-            ControllerDispatcherContract, lambda app: ControllerDispatcher(self.__app)
-        )
+        def lambda_function(app: Type["Application"]):
+            return ControllerDispatcher(self.__app)
+
+        self.__app.singleton(ControllerDispatcherContract, lambda_function)
