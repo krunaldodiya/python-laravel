@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from importlib import import_module
+import inspect
 from typing import Any, Dict, TypeVar
-from inspect import isclass, getfullargspec
+from inspect import isclass, getfullargspec, signature
 from re import match
 
 
@@ -144,7 +145,7 @@ class Container(ABC):
         if shared and (abstract in self.__instances):
             return self.__instances[abstract]
 
-        instance = self.__resolve(abstract, binding_resolver, make_args, True)
+        instance = self.__resolve(abstract, binding_resolver, make_args)
 
         if shared:
             self.__instances[abstract] = instance
@@ -169,7 +170,7 @@ class Container(ABC):
 
             binding_resolver = getattr(module, class_name)
 
-            instance = self.__resolve(abstract, binding_resolver, make_args, False)
+            instance = self.__resolve(abstract, binding_resolver, make_args)
 
             return instance
         except Exception as e:
@@ -180,27 +181,34 @@ class Container(ABC):
         abstract: str,
         binding_resolver: Any,
         make_args: Dict[str, Any] = {},
-        binding_exists: bool = False,
     ) -> Any:
-        if callable(binding_resolver):
-            if binding_exists:
-                instance = binding_resolver(self, **make_args)
-            elif make_args:
-                instance = binding_resolver(**make_args)
-            else:
-                dependencies = self.get_dependencies(binding_resolver)
-                instance = binding_resolver(*dependencies)
+        instance = None
 
+        if inspect.isfunction(binding_resolver):
+            dependencies = (
+                {"app": self, **make_args} if signature(binding_resolver) else {}
+            )
+
+            instance = binding_resolver(**dependencies)
+
+        if inspect.isclass(binding_resolver):
+            dependencies = (
+                make_args if make_args else self.get_dependencies(binding_resolver)
+            )
+
+            instance = binding_resolver(**dependencies)
+
+        if instance:
             self.__resolved[abstract] = True
             return instance
-
-        raise BindingResolutionException("Binding Resolution Exception")
+        else:
+            raise BindingResolutionException("Binding Resolution Exception")
 
     def get_dependencies(self, class_info):
         args_info = getfullargspec(class_info)
 
-        return [
-            self.make(args_info.annotations[arg])
+        return {
+            arg: self.make(args_info.annotations[arg])
             for arg in args_info.args
             if arg != "self"
-        ]
+        }

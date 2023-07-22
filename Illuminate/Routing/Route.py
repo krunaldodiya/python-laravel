@@ -40,7 +40,7 @@ class Route:
 
         dependencies = self.__app.get_dependencies(action)
 
-        return action(*dependencies)
+        return action(**dependencies)
 
     def __run_callable(self):
         return self.action["uses"]
