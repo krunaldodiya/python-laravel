@@ -10,6 +10,10 @@ from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
 
 from Illuminate.Container.Container import Container
+from Illuminate.Contracts.Container.Container import Container as ContainerContract
+from Illuminate.Contracts.Foundation.Application import (
+    Application as ApplicationContract,
+)
 
 from Illuminate.Routing.Router import Router
 
@@ -41,7 +45,7 @@ class Application(Container):
         self.__loaded_providers = {}
 
         self.__container_aliases = {
-            "app": [Application, Container],
+            "app": [Application, ApplicationContract, Container, ContainerContract],
             "request": [Request],
             "response": [ResponseFactory],
             "router": [Router],

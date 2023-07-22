@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from typing import TYPE_CHECKING, Type
+from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Foundation.Bootstrap.BootProviders import BootProviders
 from Illuminate.Foundation.Bootstrap.HandleExceptions import HandleExceptions
 from Illuminate.Foundation.Bootstrap.LoadConfiguration import LoadConfiguration
@@ -17,10 +17,7 @@ from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
 
-
-if TYPE_CHECKING:
-    from Illuminate.Foundation.Application import Application
-    from Illuminate.Routing.Router import Router
+from Illuminate.Routing.Router import Router
 
 
 class Kernel:
@@ -29,7 +26,7 @@ class Kernel:
     __middleware_aliases = {}
     __route_middleware = {}
 
-    def __init__(self, app: Type["Application"], router: Type["Router"]) -> None:
+    def __init__(self, app: Application, router: Router) -> None:
         self.__app = app
         self.__router = router
 

@@ -1,4 +1,5 @@
-from typing import Any, Dict
+from typing import Any
+
 from Illuminate.Container.Container import Container
 
 
@@ -20,8 +21,8 @@ class Test:
 
 app = Application()
 
-app.bind(Test, lambda app, data: Test(data["name"]))
+router = app.bind("router", lambda: "test")
 
-test = app.make(Test, {"name": "krunal"})
+router = app.make("router")
 
-print(test)
+print("router", router)

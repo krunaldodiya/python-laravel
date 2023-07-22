@@ -185,8 +185,12 @@ class Container(ABC):
         instance = None
 
         if inspect.isfunction(binding_resolver):
-            if signature(binding_resolver).parameters:
+            total_params = len(signature(binding_resolver).parameters)
+
+            if total_params >= 2:
                 instance = binding_resolver(self, make_args)
+            elif total_params == 1:
+                instance = binding_resolver(self)
             else:
                 instance = binding_resolver()
 

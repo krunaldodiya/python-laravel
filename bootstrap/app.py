@@ -8,4 +8,4 @@ from app.Http.Kernel import Kernel as HttpKernel
 
 app: Application = Application(Path().cwd())
 
-app.singleton(Kernel, lambda app, router: HttpKernel(app, router))
+app.singleton(Kernel, HttpKernel)

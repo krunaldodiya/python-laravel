@@ -8,7 +8,7 @@ from app.Http.Kernel import Kernel as HttpKernel
 
 from bootstrap.app import app
 
-kernel: HttpKernel = app.make(Kernel, {"router": app.make("router")})
+kernel: HttpKernel = app.make(Kernel)
 
 request: Request = Request.capture()
 
