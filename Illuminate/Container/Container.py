@@ -180,16 +180,15 @@ class Container(ABC):
         self,
         abstract: str,
         binding_resolver: Any,
-        make_args: Dict[str, Any] = {},
+        make_args: Dict[str, Any],
     ) -> Any:
         instance = None
 
         if inspect.isfunction(binding_resolver):
-            dependencies = (
-                {"app": self, **make_args} if signature(binding_resolver) else {}
-            )
-
-            instance = binding_resolver(**dependencies)
+            if signature(binding_resolver).parameters:
+                instance = binding_resolver(self, make_args)
+            else:
+                instance = binding_resolver()
 
         if inspect.isclass(binding_resolver):
             dependencies = (
