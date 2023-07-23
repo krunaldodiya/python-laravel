@@ -1,5 +1,7 @@
 import sys
 
+from importlib import import_module
+
 from Illuminate.Http.ServerBag.WSGIServer import WSGIServer
 
 from werkzeug.middleware.shared_data import SharedDataMiddleware
@@ -16,14 +18,27 @@ class WSGIApplication:
 
         self.public_path = app.public_path()
 
+        self.events = app.make("events")
+
+        self.response = None
+
     def __call__(self, environ, start_response):
         clear_module_cache("public.index")
 
         WSGIServer.create_server(environ, start_response)
 
-        from public.index import response
+        self.events.listen(
+            "response_sent", lambda response: self.on_response(response, start_response)
+        )
 
-        return response
+        import_module("public.index")
+
+        return self.response
+
+    def on_response(self, response, start_response):
+        start_response(response.get_status_code(), response.get_headers())
+
+        self.response = [response.get_content().encode("utf-8")]
 
 
 app = WSGIApplication()

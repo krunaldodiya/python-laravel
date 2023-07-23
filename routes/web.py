@@ -14,7 +14,7 @@ def test(request: Request):
 
 
 def hello(request: Request):
-    return "hello"
+    return "this is test"
 
 
 Route.get("/", home)

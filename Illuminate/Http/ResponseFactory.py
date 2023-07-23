@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, Any, Type
 
+from Illuminate.Support.Facades.Event import Event
+
 if TYPE_CHECKING:
     from Illuminate.Foundation.Application import Application
 
@@ -37,8 +39,6 @@ class ResponseFactory:
         return self
 
     def send(self):
-        request = self.__app.make("request")
+        Event.dispatch("response_sent", {"response": self})
 
-        request.server.start_response(self.get_status_code(), self.get_headers())
-
-        return [self.__content.encode("utf-8")]
+        return self
