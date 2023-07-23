@@ -1,5 +1,7 @@
 import json
 
+from Illuminate.Support.Facades.Event import Event
+
 from Illuminate.Helpers.dd import convert_values_to_string
 
 
@@ -27,4 +29,11 @@ class Logger:
             )
 
         response = self.__app.make("response")
+
         response.set_content(data)
+        response.set_status("500 INTERNAL_SERVER_ERROR")
+        response.set_headers("Content-Type", "text/html")
+
+        Event.dispatch("response_sent", {"response": response})
+
+        exit()
