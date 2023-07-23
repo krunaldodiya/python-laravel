@@ -13,8 +13,13 @@ def test(request: Request):
     return Redirect.to("/home")
 
 
+def hello(request: Request):
+    return "hello"
+
+
 Route.get("/", home)
 Route.get("/test", test)
+Route.get("/api/hello", hello)
 
 Route.get("/home", [HomeController, "home"])
 Route.get("/users", [HomeController, "create"])

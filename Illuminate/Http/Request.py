@@ -6,6 +6,10 @@ class Request:
         self.server = server
 
         self.scheme = server.scheme
+        self.server_name = server.server_name
+        self.server_port = server.server_port
+        self.host = server.host
+
         self.query_string = server.query_string
         self.method = server.method
         self.path = server.path
@@ -21,3 +25,9 @@ class Request:
     @staticmethod
     def create_from_base(server):
         return Request(server)
+
+    def get_host(self):
+        return self.host
+
+    def get_full_url(self):
+        return f"{self.host}{self.path}"

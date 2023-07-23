@@ -9,7 +9,7 @@ class WSGIServer:
         self.server_name = environ["SERVER_NAME"]
         self.server_port = environ["SERVER_PORT"]
 
-        self.server_url = self.get_server_url()
+        self.host = self.get_host()
 
         self.query_string = environ["QUERY_STRING"]
         self.method = environ["REQUEST_METHOD"]
@@ -35,7 +35,7 @@ class WSGIServer:
         finally:
             print("done")
 
-    def get_server_url(self):
+    def get_host(self):
         return (
             f"{self.scheme}://{self.server_name}"
             if self.server_port in [80, 443]

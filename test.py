@@ -1,28 +1,20 @@
-from typing import Any
-
-from Illuminate.Container.Container import Container
+import re
 
 
-class Application(Container):
-    def bind(self, *args, **kwargs) -> None:
-        return super().bind(*args, **kwargs)
+def validate_path(full_url, path):
+    escaped_pattern = re.escape(path)
+    regex_pattern = escaped_pattern.replace(r"\*", r".*")
 
-    def singleton(self, *args, **kwargs) -> None:
-        return super().singleton(*args, **kwargs)
-
-    def make(self, *args, **kwargs) -> Any:
-        return super().make(*args, **kwargs)
-
-
-class Test:
-    def __init__(self, name) -> None:
-        self.name = name
+    if re.search(regex_pattern, full_url):
+        return True
+    else:
+        return False
 
 
-app = Application()
+url = "http://google.com/api/test"
+pattern = "api/*"
 
-router = app.bind("router", lambda: "test")
-
-router = app.make("router")
-
-print("router", router)
+if validate_path(url, pattern):
+    print("URL path matches the pattern.")
+else:
+    print("URL path does not match the pattern.")
