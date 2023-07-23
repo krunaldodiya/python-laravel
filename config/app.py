@@ -6,7 +6,6 @@ from app.Providers.AppServiceProvider import AppServiceProvider
 from app.Providers.EventServiceProvider import EventServiceProvider
 from app.Providers.RouteServiceProvider import RouteServiceProvider
 
-
 app = {
     "name": os.getenv("APP_NAME", "Flight"),
     "env": os.getenv("APP_ENV", "production"),

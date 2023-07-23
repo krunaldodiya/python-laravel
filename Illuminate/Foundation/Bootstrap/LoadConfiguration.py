@@ -17,7 +17,7 @@ class LoadConfiguration:
 
         self.__load_configuration_files(config)
 
-        app.detect_environment(lambda: config.get("env", "production"))
+        app.detect_environment(lambda: config.get("app.env", "production"))
 
     def __load_configuration_files(self, config):
         files = config.get_files()

@@ -22,7 +22,8 @@ class Application(Container):
     def __init__(self, base_path=None) -> None:
         super().__init__()
 
-        self.__environment = "local"
+        self.__environment_path = None
+        self.__environment_file = ".env"
 
         self.__app_path = None
         self.__base_path = None
@@ -197,6 +198,26 @@ class Application(Container):
         self.instance("path.bootstrap", path)
         return self
 
+    def environment_path(self):
+        return self.__environment_path if self.__environment_path else self.base_path()
+
+    def use_environment_path(self, path):
+        self.__environment_path = path
+        return self
+
+    def environment_file(self):
+        return self.__environment_file if self.__environment_file else ".env"
+
+    def environment_file_path(self):
+        return self.join_paths(
+            self.environment_path(),
+            self.environment_file(),
+        )
+
+    def load_environment_from(self, file):
+        self.__environment_file = file
+        return self
+
     def __bind_path_in_container(self):
         self.instance("path", self.app_path())
         self.instance("path.base", self.base_path())
@@ -300,4 +321,4 @@ class Application(Container):
         return super().make(*args, **kwargs)
 
     def detect_environment(self, callback):
-        self.__environment = callback()
+        self.instance("env", callback())

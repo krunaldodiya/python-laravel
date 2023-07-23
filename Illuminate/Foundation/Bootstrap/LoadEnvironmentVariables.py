@@ -9,12 +9,15 @@ if TYPE_CHECKING:
 
 class LoadEnvironmentVariables:
     def bootstrap(self, app: Type["Application"]) -> None:
-        self.__load_environment(".env", False)
+        environment_file_path = app.environment_file_path()
+        self.__load_environment(environment_file_path, False)
 
         if os.getenv("APP_ENV"):
-            self.__load_environment(f".env." + os.getenv("APP_ENV"), True)
+            env_path = f'{environment_file_path}.{os.getenv("APP_ENV")}'
 
-    def __load_environment(self, environment, override):
-        env_path = Path(environment)
+            if Path(env_path).exists():
+                app.load_environment_from(env_path)
+                self.__load_environment(env_path, True)
 
+    def __load_environment(self, env_path, override):
         load_dotenv(env_path, override=override)
