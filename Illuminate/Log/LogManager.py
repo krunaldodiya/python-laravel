@@ -7,7 +7,7 @@ class LogManager:
         self.__logger = Logger(self.__app)
 
     def log(self, info) -> None:
-        self.__logger.log(info)
+        return self.__logger.log(info)
 
     def dd(self, info) -> None:
-        self.__logger.dd(info)
+        return self.__logger.dd(info)

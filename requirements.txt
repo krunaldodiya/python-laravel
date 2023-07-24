@@ -2,3 +2,4 @@ python-dotenv
 requests
 Werkzeug
 Jinja2
+exceptionite

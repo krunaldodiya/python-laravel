@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 import inspect
 from typing import Any, Dict, TypeVar
-from inspect import isclass, getfullargspec, signature
-from re import match
+from inspect import getfullargspec, signature
 
 
 class AttributeNotFound(Exception):
