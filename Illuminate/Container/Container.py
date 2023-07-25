@@ -65,6 +65,26 @@ class Container(ABC):
         except Exception as e:
             raise Exception(e)
 
+    def bind_if(self, key: str, binding_resolver: Any) -> None:
+        instance = self.bound(key)
+
+        if instance:
+            return instance
+        else:
+            return self.__bind(key, binding_resolver, False)
+
+    def bound(self, key: str) -> None:
+        base_key = self.get_base_key(key)
+        abstract = self.get_alias(base_key)
+
+        binding = self.__bindings.get(abstract)
+        instance = self.__instances.get(abstract)
+
+        if binding and instance:
+            return instance
+        else:
+            return None
+
     def instance(self, key, instance):
         base_key = self.get_base_key(key)
         abstract = self.get_alias(base_key)
