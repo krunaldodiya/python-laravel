@@ -23,17 +23,19 @@ class WSGIApplication:
         self.response = None
 
     def __call__(self, environ, start_response):
-        clear_module_cache("public.index")
+        try:
+            clear_module_cache("public.index")
 
-        WSGIServer.create_server(environ, start_response)
+            WSGIServer.create_server(environ, start_response)
 
-        self.events.listen(
-            "response_sent", lambda response: self.on_response(response, start_response)
-        )
+            self.events.listen(
+                "response_sent",
+                lambda response: self.on_response(response, start_response),
+            )
 
-        import_module("public.index")
-
-        return self.response
+            import_module("public.index")
+        finally:
+            return self.response
 
     def on_response(self, response, start_response):
         start_response(response.get_status_code(), response.get_headers())

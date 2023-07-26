@@ -11,19 +11,29 @@ class Logger:
         print("logging", info)
 
     def dd(self, info):
-        if isinstance(info, str):
-            data = info
-        elif isinstance(info, (int, float, bool)):
-            data = str(info)
-        elif isinstance(info, (list, dict)):
-            data = json.dumps(convert_values_to_string(info))
-        elif callable(info):
-            data = json.dumps(convert_values_to_string(vars(info)))
-        else:
-            data = (
-                json.dumps(convert_values_to_string(vars(info)))
-                if hasattr(info, "__dict__")
-                else str(info)
-            )
+        try:
+            if isinstance(info, str):
+                data = info
+            elif isinstance(info, (int, float, bool)):
+                data = str(info)
+            elif isinstance(info, (list, dict)):
+                data = json.dumps(convert_values_to_string(info))
+            elif callable(info):
+                data = json.dumps(convert_values_to_string(vars(info)))
+            else:
+                data = (
+                    json.dumps(convert_values_to_string(vars(info)))
+                    if hasattr(info, "__dict__")
+                    else str(info)
+                )
 
-        return data
+            response = self.__app.make("response")
+            events = self.__app.make("events")
+
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "application/json")
+            response.set_content(data)
+
+            events.dispatch("response_sent", {"response": response})
+        finally:
+            exit()
