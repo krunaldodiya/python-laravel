@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Type
 from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Events.EventServiceProvider import EventServiceProvider
@@ -13,6 +13,9 @@ from Illuminate.Container.Container import Container
 from Illuminate.Contracts.Container.Container import Container as ContainerContract
 from Illuminate.Contracts.Foundation.Application import (
     Application as ApplicationContract,
+)
+from Illuminate.Contracts.Support.ServiceProvider import (
+    SericeProvider as ServiceProviderContract,
 )
 
 from Illuminate.Routing.Router import Router
@@ -128,9 +131,11 @@ class Application(Container):
 
     def database_path(self, path=""):
         return self.join_paths(
-            self.__database_path
-            if self.__database_path
-            else self.base_path("database"),
+            (
+                self.__database_path
+                if self.__database_path
+                else self.base_path("database")
+            ),
             path,
         )
 
@@ -152,9 +157,11 @@ class Application(Container):
 
     def resources_path(self, path=""):
         return self.join_paths(
-            self.__resources_path
-            if self.__resources_path
-            else self.base_path("resources"),
+            (
+                self.__resources_path
+                if self.__resources_path
+                else self.base_path("resources")
+            ),
             path,
         )
 
@@ -187,9 +194,11 @@ class Application(Container):
 
     def bootstrap_path(self, path=""):
         return self.join_paths(
-            self.__bootstrap_path
-            if self.__bootstrap_path
-            else self.base_path("bootstrap"),
+            (
+                self.__bootstrap_path
+                if self.__bootstrap_path
+                else self.base_path("bootstrap")
+            ),
             path,
         )
 
@@ -265,7 +274,7 @@ class Application(Container):
         for callback in callbacks:
             callback(self)
 
-    def register(self, provider_class):
+    def register(self, provider_class: Type[ServiceProviderContract]):
         base_key = self.get_base_key(provider_class)
 
         registered = self.get_provider(base_key)
