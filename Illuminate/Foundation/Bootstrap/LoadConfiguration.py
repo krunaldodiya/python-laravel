@@ -1,14 +1,12 @@
 import importlib
-from typing import TYPE_CHECKING, Type
 
 from Illuminate.Config.Repository import Repository
 
-if TYPE_CHECKING:
-    from Illuminate.Foundation.Application import Application
+from Illuminate.Contracts.Foundation.Application import Application
 
 
 class LoadConfiguration:
-    def bootstrap(self, app: Type["Application"]) -> None:
+    def bootstrap(self, app: Application) -> None:
         config_path = app.make("path.config")
 
         config = Repository({}, config_path)
