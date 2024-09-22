@@ -22,15 +22,16 @@ from Illuminate.Routing.Router import Router
 
 
 class Application(Container):
-    def __init__(self, base_path=None) -> None:
+    def __init__(self, app_path: str = "app") -> None:
         super().__init__()
 
         self.__environment_path = None
         self.__environment_file = ".env"
 
+        self.__base_path = Path().cwd()
         self.__app_path = None
-        self.__base_path = None
         self.__config_path = None
+
         self.__database_path = None
         self.__public_path = None
         self.__resources_path = None
@@ -56,8 +57,7 @@ class Application(Container):
             "events": [Dispatcher],
         }
 
-        if base_path:
-            self.set_base_path(base_path)
+        self.__set_app_path(app_path)
 
         self.__register_base_bindings()
         self.__register_base_providers()
@@ -94,8 +94,8 @@ class Application(Container):
 
         self.__has_been_bootstrapped = True
 
-    def set_base_path(self, base_path: Path):
-        self.__base_path = base_path
+    def __set_app_path(self, app_path: str):
+        self.__app_path = self.base_path(app_path)
 
         self.__bind_path_in_container()
 
