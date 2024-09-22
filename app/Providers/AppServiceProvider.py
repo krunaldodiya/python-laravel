@@ -12,7 +12,7 @@ class AppServiceProvider(ServiceProvider):
         self.__app = app
 
     def register(self):
-        pass
+        print("register")
 
     def boot(self):
-        pass
+        print("boot")

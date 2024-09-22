@@ -295,7 +295,7 @@ class Application(Container):
 
         return provider
 
-    def boot_provider(self, service_provider) -> Any:
+    def boot_provider(self, service_provider: ServiceProviderContract) -> Any:
         service_provider.call_booting_callbacks()
         service_provider.boot()
         service_provider.call_booted_callbacks()
