@@ -1,8 +1,4 @@
-from typing import TYPE_CHECKING, Type
-
-
-if TYPE_CHECKING:
-    from Illuminate.Foundation.Application import Application
+from Illuminate.Contracts.Foundation.Application import Application
 
 
 class Facade(type):
@@ -18,5 +14,5 @@ class Facade(type):
         return getattr(binding, attribute)
 
     @staticmethod
-    def set_facade_application(app: Type["Application"]):
+    def set_facade_application(app: Application):
         Facade.app = app
