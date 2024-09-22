@@ -1,5 +1,6 @@
+import builtins
+
 from Illuminate.Http.Request import Request
-from Illuminate.Support.Facades.Log import Log
 from Illuminate.Support.Facades.App import App
 from Illuminate.Support.Facades.Redirect import Redirect
 from app.Http.Controllers.HomeController import HomeController
@@ -9,7 +10,7 @@ from Illuminate.Support.Facades.Route import Route
 def home(request: Request):
     router = App.make("app")
 
-    Log.dd(router)
+    builtins.dd(router)
 
 
 def test(request: Request):
