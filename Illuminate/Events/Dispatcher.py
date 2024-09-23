@@ -1,3 +1,8 @@
+import inspect
+import types
+from typing import Callable
+
+
 class Dispatcher:
     def __init__(self, app) -> None:
         self.__app = app
@@ -7,7 +12,15 @@ class Dispatcher:
         callbacks = self.__listeners.get(event, [])
 
         for callback in callbacks:
-            callback(**args)
+            self.handle_callback(callback, event, args)
+
+    def handle_callback(self, callback, event, args):
+        if isinstance(callback, types.FunctionType):
+            callback(event)
+        elif inspect.isclass(callback):
+            callback(**args).handle(event)
+        else:
+            return "Unknown type"
 
     def listen(self, event, callback):
         self.__listeners[event] = []
