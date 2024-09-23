@@ -1,6 +1,5 @@
 import inspect
 import types
-from typing import Callable
 
 
 class Dispatcher:
