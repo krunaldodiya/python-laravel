@@ -11,10 +11,10 @@ class Gate(GateContract):
     def define(self, ability: str, callback: Callable[[Any], Any]):
         self.__abilities[ability] = callback
 
-    def check(self, ability: str, arguments: List[Any]):
-        try:
-            callback = self.__abilities[ability]
+    def check(self, ability: str, arguments: List[Any]) -> bool:
+        abilities = [ability] if isinstance(ability, str) else ability
 
-            return callback(*arguments)
-        except KeyError:
-            return False
+        return all(
+            self.__abilities.get(ability, lambda *args: False)(*arguments)
+            for ability in abilities
+        )
