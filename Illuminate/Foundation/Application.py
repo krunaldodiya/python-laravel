@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Type
+from Illuminate.Auth.AuthServiceProvider import AuthServiceProvider
 from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Events.EventServiceProvider import EventServiceProvider
@@ -246,6 +247,7 @@ class Application(Container):
         self.instance(Container, self)
 
     def __register_base_providers(self):
+        self.register(AuthServiceProvider)
         self.register(EventServiceProvider)
         self.register(LogServiceProvider)
         self.register(RoutingServiceProvider)
