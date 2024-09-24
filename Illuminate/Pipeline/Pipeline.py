@@ -1,5 +1,6 @@
-from functools import reduce
 import inspect
+
+from functools import reduce
 
 
 class Pipeline:
@@ -55,11 +56,11 @@ class Pipeline:
 
         should_continue = should_continue and caller is not None
 
-        self.__manage_pipe(should_continue, caller)
+        return self.__manage_pipe(should_continue, caller)
 
     def __get_caller(self, obj):
-        if hasattr(obj, "handle"):
-            return getattr(obj, "handle")
+        if hasattr(obj, self.__method):
+            return getattr(obj, self.__method)
         else:
             return getattr(obj, "__call__")
 
