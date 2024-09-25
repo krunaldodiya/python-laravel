@@ -1,13 +1,26 @@
-from importlib import import_module
+from typing import Any, Dict
 
 
 class Route:
-    def __init__(self, methods, uri, action) -> None:
+    def __init__(self, attributes: Dict[str, Any], methods, uri, action) -> None:
+        self.__name: str = attributes.get("name", "")
+
+        self.__as: str = attributes.get("as", "")
+
+        self.__prefix: str = attributes.get("prefix", "")
+
+        self.__middleware = attributes.get("middleware", [])
+
+        self.__computed_middleware = None
+
         self.__methods = methods
-        self.__uri = uri
+
+        self.__uri = f"{self.__prefix.strip('/')}/{uri}" if self.__prefix else uri
+
         self.__action = action
 
         self.__router = None
+
         self.__app = None
 
     @property
@@ -21,6 +34,10 @@ class Route:
     @property
     def action(self):
         return self.__action
+
+    @property
+    def middleware(self):
+        return self.__middleware
 
     def set_router(self, router):
         self.__router = router
@@ -54,3 +71,9 @@ class Route:
 
     def __run_callable(self):
         return self.action["uses"]
+
+    def gather_middleware(self):
+        if not self.__computed_middleware:
+            self.__computed_middleware = self.__middleware
+
+        return self.__computed_middleware

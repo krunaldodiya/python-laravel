@@ -1,7 +1,9 @@
 from datetime import datetime
 
+from django.http import HttpRequest, HttpResponse
+
 from Illuminate.Contracts.Foundation.Application import Application
-from Illuminate.Contracts.Routing.Router import Router
+from Illuminate.Contracts.Routing.Router import Router as RouterContract
 from Illuminate.Foundation.Bootstrap.BootProviders import BootProviders
 from Illuminate.Foundation.Bootstrap.HandleExceptions import HandleExceptions
 from Illuminate.Foundation.Bootstrap.LoadConfiguration import LoadConfiguration
@@ -14,18 +16,16 @@ from Illuminate.Foundation.Http.Middleware.HandlePrecognitiveRequests import (
     HandlePrecognitiveRequests,
 )
 
-from Illuminate.Http.Request import Request
-from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
 
 
 class Kernel:
     __middleware = []
-    __middleware_groups = []
-    __middleware_aliases = []
-    __route_middleware = []
+    __middleware_groups = {}
+    __middleware_aliases = {}
+    __route_middleware = {}
 
-    def __init__(self, app: Application, router: Router) -> None:
+    def __init__(self, app: Application, router: RouterContract) -> None:
         self.__app = app
         self.__router = router
 
@@ -79,10 +79,10 @@ class Kernel:
         return self.__route_middleware
 
     def __sync_middleware_to_router(self):
-        self.__router.middleware_priorities = self.__middleware_priorities
+        self.router.middleware_priorities = self.middleware_priorities
 
         for key, middleware in self.middleware_groups.items():
-            self.__router.middleware_group(key, middleware)
+            self.router.middleware_group(key, middleware)
 
         merged_middleware = {
             **self.route_middleware,
@@ -90,14 +90,14 @@ class Kernel:
         }
 
         for key, middleware in merged_middleware.items():
-            self.__router.alias_middleware(key, middleware)
+            self.router.alias_middleware(key, middleware)
 
-    def handle(self, request: Request) -> ResponseFactory:
+    def handle(self, request: HttpRequest) -> HttpResponse:
         self.request_started_at = datetime.now()
 
         return self.send_through_router(request)
 
-    def send_through_router(self, request: Request):
+    def send_through_router(self, request: HttpRequest):
         self.__app.instance("request", request)
 
         self.__bootstrap()
@@ -113,7 +113,7 @@ class Kernel:
         def dispatching_to_router(request):
             self.__app.instance("request", request)
 
-            return self.__router.dispatch(request)
+            return self.router.dispatch(request)
 
         return dispatching_to_router
 
@@ -121,7 +121,7 @@ class Kernel:
         if not self.__app.has_been_bootstrapped():
             self.__app.bootstrap_with(self.bootstrappers)
 
-    def terminate(self, request: Request, response: ResponseFactory):
+    def terminate(self, request: HttpRequest, response: HttpResponse):
         print("terminating")
 
     def push_middleware(self, middleware):
