@@ -16,7 +16,7 @@ from Illuminate.Contracts.Foundation.Application import (
     Application as ApplicationContract,
 )
 from Illuminate.Contracts.Support.ServiceProvider import (
-    SericeProvider as ServiceProviderContract,
+    ServiceProvider as ServiceProviderContract,
 )
 
 from Illuminate.Routing.Router import Router
