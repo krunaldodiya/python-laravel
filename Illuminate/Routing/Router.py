@@ -2,6 +2,7 @@ from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
+from Illuminate.Routing.LambdaController import LambdaController
 from Illuminate.Routing.Redirector import Redirector
 from Illuminate.Routing.Route import Route
 
@@ -55,7 +56,9 @@ class Router:
         self.__add_route(["OPTION"], uri, action)
 
     def __add_route(self, methods, uri, action):
-        self.routes.add(self.__create_route(methods, uri, action))
+        route = self.__create_route(methods, uri, action)
+
+        self.routes.add(route)
 
     def __create_route(self, methods, uri, action):
         action = self.__convert_to_controller_action(action)
@@ -66,6 +69,11 @@ class Router:
         return Route(methods, uri, action).set_router(self).set_application(self.__app)
 
     def __convert_to_controller_action(self, action):
+        """
+        Convert the given action into a controller action.
+        """
+
+        # If action is a list, assume it's a controller and method pair.
         if isinstance(action, list):
             controller, controller_action = action
 
@@ -75,9 +83,24 @@ class Router:
                 "controller_name": f"{controller.__name__}",
             }
 
-        if hasattr(action, "__name__") and action.__name__ == "<lambda>":
-            raise Exception("lambda function are not allowed")
+        # If the action is a lambda function (anonymous function), wrap it in a LambdaController
+        if callable(action) and (action.__name__ == "<lambda>"):
+            lambda_controller = LambdaController(action)
+            return {
+                "uses": lambda_controller,
+                "type": "lambda_controller",
+                "module": lambda_controller.__class__.__module__,
+            }
 
+        # If action is a class with a __call__ method, treat it as an invokable controller.
+        if hasattr(action, "__call__") and not isinstance(action, LambdaController):
+            return {
+                "uses": action.__class__.__name__,
+                "controller_module": action.__class__.__module__,
+                "type": "invokable",
+            }
+
+        # Default fallback if it's a simple callable function
         return {"uses": action}
 
     def dispatch(self, request: Request):
