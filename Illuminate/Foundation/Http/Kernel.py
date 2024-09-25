@@ -123,3 +123,9 @@ class Kernel:
 
     def terminate(self, request: Request, response: ResponseFactory):
         print("terminating")
+
+    def push_middleware(self, middleware):
+        if middleware not in self.middleware:
+            self.middleware.append(middleware)
+
+        return self
