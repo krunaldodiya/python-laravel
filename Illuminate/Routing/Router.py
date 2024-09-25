@@ -69,39 +69,24 @@ class Router:
         return Route(methods, uri, action).set_router(self).set_application(self.__app)
 
     def __convert_to_controller_action(self, action):
-        """
-        Convert the given action into a controller action.
-        """
-
-        # If action is a list, assume it's a controller and method pair.
-        if isinstance(action, list):
-            controller, controller_action = action
-
-            return {
-                "controller_action": controller_action,
-                "controller_module": f"{controller.__module__}",
-                "controller_name": f"{controller.__name__}",
-            }
-
-        # If the action is a lambda function (anonymous function), wrap it in a LambdaController
         if callable(action) and (action.__name__ == "<lambda>"):
-            lambda_controller = LambdaController(action)
+            return {"uses": action}
+
+        if isinstance(action, list):
+            controller_class, controller_action = action
+
             return {
-                "uses": lambda_controller,
-                "type": "lambda_controller",
-                "module": lambda_controller.__class__.__module__,
+                "controller_class": controller_class,
+                "controller_action": controller_action,
+                "type": "controller",
             }
 
-        # If action is a class with a __call__ method, treat it as an invokable controller.
-        if hasattr(action, "__call__") and not isinstance(action, LambdaController):
+        if hasattr(action, "__call__"):
             return {
-                "uses": action.__class__.__name__,
-                "controller_module": action.__class__.__module__,
-                "type": "invokable",
+                "controller_class": action,
+                "controller_action": "__call__",
+                "type": "controller",
             }
-
-        # Default fallback if it's a simple callable function
-        return {"uses": action}
 
     def dispatch(self, request: Request):
         self.current_request = request
