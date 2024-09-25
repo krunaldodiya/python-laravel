@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from Illuminate.Contracts.Foundation.Application import Application
+from Illuminate.Contracts.Routing.Router import Router
 from Illuminate.Foundation.Bootstrap.BootProviders import BootProviders
 from Illuminate.Foundation.Bootstrap.HandleExceptions import HandleExceptions
 from Illuminate.Foundation.Bootstrap.LoadConfiguration import LoadConfiguration
@@ -17,14 +18,12 @@ from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
 
-from Illuminate.Routing.Router import Router
-
 
 class Kernel:
-    __middleware = {}
-    __middleware_groups = {}
-    __middleware_aliases = {}
-    __route_middleware = {}
+    __middleware = []
+    __middleware_groups = []
+    __middleware_aliases = []
+    __route_middleware = []
 
     def __init__(self, app: Application, router: Router) -> None:
         self.__app = app
