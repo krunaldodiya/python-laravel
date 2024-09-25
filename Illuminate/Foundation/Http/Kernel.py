@@ -79,7 +79,7 @@ class Kernel:
         return self.__route_middleware
 
     def __sync_middleware_to_router(self):
-        self.router.middleware_priorities = self.middleware_priorities
+        self.router.middleware_priorities(self.middleware_priorities)
 
         for key, middleware in self.middleware_groups.items():
             self.router.middleware_group(key, middleware)

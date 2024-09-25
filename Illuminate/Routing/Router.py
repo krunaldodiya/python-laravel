@@ -30,7 +30,7 @@ class Router:
 
         self.__middleware_groups = {}
 
-        self.__middleware_priorities = {}
+        self.__middleware_priorities = []
 
         self.__registered_paths = []
 
@@ -46,6 +46,11 @@ class Router:
 
     def get_middleware_priorities(self):
         return self.__middleware_priorities
+
+    def middleware_priorities(self, middleware_priorities: List[Any]):
+        self.__middleware_priorities = middleware_priorities
+
+        return self
 
     def middleware(self, middleware: List[Any]):
         self.__set_middleware(middleware)
