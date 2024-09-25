@@ -20,6 +20,7 @@ from Illuminate.Contracts.Support.ServiceProvider import (
 )
 
 from Illuminate.Routing.Router import Router
+from Illuminate.Support.Facades.Config import Config
 
 
 class Application(Container):
@@ -253,8 +254,7 @@ class Application(Container):
         self.register(RoutingServiceProvider)
 
     def register_configured_providers(self) -> Any:
-        config = self.make("config")
-        providers = config["app.providers"]
+        providers = Config.get("app.providers")
 
         for provider_class in providers:
             self.register(provider_class)
