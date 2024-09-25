@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Type
+from Illuminate.Contracts.Events import Dispatcher
+from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Routing.Redirector import Redirector
@@ -8,17 +9,12 @@ from Illuminate.Routing.RouteCollection import RouteCollection
 from Illuminate.View.ViewFactory import ViewFactory
 
 
-if TYPE_CHECKING:
-    from Illuminate.Foundation.Application import Application
-    from Illuminate.Events.Dispatcher import Dispatcher
-
-
 class RouteNotFound(Exception):
     pass
 
 
 class Router:
-    def __init__(self, app: Type["Application"], events: Type["Dispatcher"]) -> None:
+    def __init__(self, app: Application, events: Dispatcher) -> None:
         self.__app = app
         self.__events = events
 
