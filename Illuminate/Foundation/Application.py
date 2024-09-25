@@ -333,5 +333,8 @@ class Application(Container):
     def make(self, *args, **kwargs) -> Any:
         return super().make(*args, **kwargs)
 
+    def provider_is_loaded(self, base_key):
+        return self.__loaded_providers.get(base_key)
+
     def detect_environment(self, callback):
         self.instance("env", callback())
