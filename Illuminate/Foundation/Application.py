@@ -20,6 +20,8 @@ from Illuminate.Contracts.Support.ServiceProvider import (
 )
 
 from Illuminate.Routing.Router import Router
+from Illuminate.Contracts.Routing.Router import Router as RouterContract
+
 from Illuminate.Support.Facades.Config import Config
 
 
@@ -55,7 +57,7 @@ class Application(Container):
             "app": [Application, ApplicationContract, Container, ContainerContract],
             "request": [Request],
             "response": [ResponseFactory],
-            "router": [Router],
+            "router": [Router, RouterContract],
             "events": [Dispatcher],
         }
 
