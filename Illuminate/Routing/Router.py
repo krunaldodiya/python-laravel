@@ -3,6 +3,7 @@ from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
+from Illuminate.Pipeline.Pipeline import Pipeline
 from Illuminate.Routing.Redirector import Redirector
 from Illuminate.Routing.Route import Route
 
@@ -141,7 +142,9 @@ class Router:
         return self.__run_route(request, self.__find_matching_route(request))
 
     def __run_route(self, request: Request, route: Route):
-        if not route:
+        if route:
+            return self.__run_route_within_stack(request, route)
+        else:
             response = self.__app.make("response")
             response.set_content("Route not found")
             response.set_status("404 NOT_FOUND")
@@ -149,6 +152,58 @@ class Router:
 
             return response
 
+    def __run_route_within_stack(self, request, route):
+        middleware = self.__gather_route_middleware(route)
+
+        return (
+            Pipeline(self.__app)
+            .send(request)
+            .through(middleware)
+            .then(self.__prepare_response(route))
+        )
+
+    def __gather_route_middleware(self, route):
+        route_middleware = route.gather_middleware()
+
+        resolved_middleware = self.__resolve_middlware(route_middleware)
+
+        return resolved_middleware
+
+    def __resolve_middlware(self, middleware: List[Any]):
+        flattened = []
+
+        for item in middleware:
+            if isinstance(item, str) and item in self.__middleware_groups:
+                extender = self.__resolve_middlware(self.__middleware_groups[item])
+
+                flattened.extend(extender)
+            else:
+                flattened.append(item)
+
+        return self.__sort_middleware_by_priorities(flattened)
+
+    def __sort_middleware_by_priorities(self, middleware: List[Any]):
+        priorities = []
+
+        non_priorities = []
+
+        for item in middleware:
+            if item in self.__middleware_priorities:
+                priorities.append(item)
+            else:
+                non_priorities.append(item)
+
+        return priorities + non_priorities
+
+    def __find_matching_route(self, request: Request):
+        matched_route: Route = self.routes.match(request)
+
+        if matched_route:
+            return matched_route.set_router(self).set_application(self.__app)
+        else:
+            return None
+
+    def __prepare_response(self, request: Request, route: Route):
         content = route.run()
 
         if isinstance(content, ResponseFactory):
@@ -171,14 +226,6 @@ class Router:
             response.set_status("302 FOUND")
             response.set_headers("Location", content.url)
             return response
-
-    def __find_matching_route(self, request: Request):
-        matched_route: Route = self.routes.match(request)
-
-        if matched_route:
-            return matched_route.set_router(self).set_application(self.__app)
-        else:
-            return None
 
     def get_routes(self):
         return self.routes
