@@ -44,6 +44,7 @@ class Application(Container):
         self.__bootstrap_path = None
 
         self.__has_been_bootstrapped = False
+        self.__running_in_console = False
 
         self.__booted = False
         self.__booting_callbacks = []
@@ -338,3 +339,14 @@ class Application(Container):
 
     def detect_environment(self, callback):
         self.instance("env", callback())
+
+    def running_in_console(self):
+        return self.__running_in_console
+
+    def after_resolving(self, abstract, callback):
+        self.make(abstract)
+
+        callback(self, self.make("request"))
+
+    def bound(self, abstract):
+        return self.get_instance(abstract) is not None
