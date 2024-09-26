@@ -1,11 +1,12 @@
 import inspect
-import types
+
+from typing import Any, Dict
 
 
 class Dispatcher:
     def __init__(self, app) -> None:
         self.__app = app
-        self.__listeners = {}
+        self.__listeners: Dict[Any, Any] = {}
 
     def dispatch(self, event, args={}):
         callbacks = self.__listeners.get(event, [])
@@ -14,14 +15,12 @@ class Dispatcher:
             self.handle_callback(callback, event, args)
 
     def handle_callback(self, callback, event, args):
-        if isinstance(callback, types.FunctionType):
-            callback(event)
-        elif inspect.isclass(callback):
+        if inspect.isclass(callback):
             callback(**args).handle(event)
         else:
-            return "Unknown type"
+            callback(**args)
 
     def listen(self, event, callback):
-        self.__listeners[event] = []
+        self.__listeners.setdefault(event, [])
 
         self.__listeners[event].append(callback)
