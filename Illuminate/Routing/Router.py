@@ -23,7 +23,7 @@ class Router:
 
         self.routes = RouteCollection()
 
-        self.current = None
+        self.__current_route = None
 
         self.current_request = None
 
@@ -38,6 +38,10 @@ class Router:
         self.__attributes = self.__get_default_attributes()
 
         self.__allowed_attributes = self.__attributes.keys()
+
+    @property
+    def current_route(self):
+        return self.__current_route
 
     def get_middleware(self):
         return self.__middleware
@@ -199,6 +203,8 @@ class Router:
         matched_route: Route = self.routes.match(request)
 
         if matched_route:
+            self.__current_route = matched_route
+
             return matched_route.set_router(self).set_application(self.__app)
         else:
             return None
