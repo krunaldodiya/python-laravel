@@ -23,6 +23,12 @@ class Route:
 
         self.__app = None
 
+        self.__params = {}
+
+    @property
+    def params(self):
+        return self.__params
+
     @property
     def methods(self):
         return self.__methods
@@ -92,3 +98,8 @@ class Route:
         controller_object = self.__get_controller()
 
         return getattr(controller_object, "middleware", [])
+
+    def set_params(self, params: Dict[str, Any]):
+        self.__params = params
+
+        return self

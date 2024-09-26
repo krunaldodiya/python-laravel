@@ -37,14 +37,14 @@ class RouteCollection:
     def __run_match(self, request: Request, route: Route):
         request_path = request.path.strip("/")
 
-        request_uri = route.uri.strip("/")
+        route_uri = route.uri.strip("/")
 
-        pattern = re.escape(request_uri)
+        pattern = re.escape(route_uri)
 
         params = re.findall(r":(\w+)", pattern)
 
         if not params:
-            return route if request_uri == request_path else None
+            return route if route_uri == request_path else None
 
         for param in params:
             pattern = pattern.replace(f":{param}", r"(?P<" + param + r">[^/]+)")
@@ -53,4 +53,7 @@ class RouteCollection:
 
         match = re.match(pattern, request_path)
 
-        return route if match else None
+        if match:
+            return route.set_params(match.groupdict())
+        else:
+            return None
