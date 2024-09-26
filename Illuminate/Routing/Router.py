@@ -21,11 +21,11 @@ class Router:
 
         self.__events = events
 
-        self.routes = RouteCollection()
+        self.__route_collection = RouteCollection()
 
         self.__current_route = None
 
-        self.current_request = None
+        self.__current_request = None
 
         self.__middleware = {}
 
@@ -40,8 +40,16 @@ class Router:
         self.__allowed_attributes = self.__attributes.keys()
 
     @property
+    def route_collection(self):
+        return self.__route_collection
+
+    @property
     def current_route(self):
         return self.__current_route
+
+    @property
+    def current_request(self):
+        return self.__current_request
 
     def get_middleware(self):
         return self.__middleware
@@ -97,7 +105,7 @@ class Router:
     def __add_route(self, methods, uri, action):
         route = self.__create_route(methods, uri, action)
 
-        self.routes.add(route)
+        self.__route_collection.add(route)
 
         return self
 
@@ -138,7 +146,7 @@ class Router:
             }
 
     def dispatch(self, request: Request):
-        self.current_request = request
+        self.__current_request = request
 
         return self.__dispatch_to_route(request)
 
@@ -200,7 +208,7 @@ class Router:
         return priorities + non_priorities
 
     def __find_matching_route(self, request: Request):
-        matched_route: Route = self.routes.match(request)
+        matched_route: Route = self.__route_collection.match(request)
 
         if matched_route:
             self.__current_route = matched_route
@@ -234,7 +242,7 @@ class Router:
             return response
 
     def get_routes(self):
-        return self.routes
+        return self.__route_collection
 
     def register_path(self, path: str):
         self.__registered_paths.append(path)
