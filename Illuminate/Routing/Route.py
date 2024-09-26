@@ -64,8 +64,11 @@ class Route:
 
         return action(**dependencies)
 
+    def __get_controller(self):
+        return self.__app.make(self.action["controller_class"])
+
     def __run_controller(self):
-        controller_object = self.__app.make(self.action["controller_class"])
+        controller_object = self.__get_controller()
 
         return getattr(controller_object, self.action["controller_action"])
 
@@ -74,6 +77,18 @@ class Route:
 
     def gather_middleware(self):
         if not self.__computed_middleware:
-            self.__computed_middleware = self.__middleware
+            self.__computed_middleware = (
+                self.__middleware + self.__controller_middleware()
+            )
 
         return self.__computed_middleware
+
+    def __controller_middleware(self):
+        type = self.action.get("type")
+
+        if not type == "controller":
+            return []
+
+        controller_object = self.__get_controller()
+
+        return getattr(controller_object, "middleware", [])
