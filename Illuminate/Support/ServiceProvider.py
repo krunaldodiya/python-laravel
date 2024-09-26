@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import importlib
 from typing import Any
 
 
@@ -31,3 +32,6 @@ class ServiceProvider(ABC):
 
         if callbacks:
             callbacks()
+
+    def load_routes_from(self, loader: str):
+        importlib.import_module(loader)
