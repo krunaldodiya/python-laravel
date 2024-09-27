@@ -185,14 +185,16 @@ class Router:
         if isinstance(output, Response):
             return output
 
-        # content = route.run()
-        # print(content)
+        content = route.run()
 
         response = self.__app.make("response")
 
-        response.set_content("hello")
+        response.set_content(str(content))
+
         response.set_status("200 OK")
-        response.set_headers("Content-Type", "text/plain")
+
+        response.set_headers("Content-Type", "application/json")
+
         response.send()
 
     def __gather_route_middleware(self, route):
