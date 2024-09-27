@@ -76,7 +76,7 @@ class Router:
         return self
 
     def alias_middleware(self, key, middleware):
-        self.middleware[key] = middleware
+        self.__middleware[key] = middleware
         return self
 
     def get(self, uri, action):

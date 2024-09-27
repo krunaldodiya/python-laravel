@@ -34,8 +34,10 @@ class WSGIApplication:
             )
 
             import_module("public.index")
-        finally:
+
             return self.response
+        except Exception as e:
+            print(e)
 
     def on_response(self, response, start_response):
         start_response(response.get_status_code(), response.get_headers())
