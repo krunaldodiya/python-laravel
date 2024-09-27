@@ -94,7 +94,9 @@ class Route:
 
         dependencies = self.app.get_dependencies(action)
 
-        return action(**dependencies)
+        response = action(**dependencies)
+
+        return response
 
     def __get_controller(self):
         return self.app.make(self.action["controller_class"])

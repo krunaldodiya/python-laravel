@@ -10,9 +10,7 @@ from Illuminate.Support.Facades.Route import Route
 def home(request: Request):
     router = App.make("app")
 
-    print("test")
-
-    builtins.dd(router)
+    return builtins.dd(router)
 
 
 def test(request: Request):

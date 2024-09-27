@@ -1,16 +1,14 @@
 import types
+
 from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Contracts.Http.Response import Response
 from Illuminate.Http.Request import Request
-from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
-from Illuminate.Routing.Redirector import Redirector
 from Illuminate.Routing.Route import Route
 
 from Illuminate.Routing.RouteCollection import RouteCollection
-from Illuminate.View.ViewFactory import ViewFactory
 
 
 class RouteNotFound(Exception):
@@ -155,7 +153,9 @@ class Router:
     def dispatch(self, request: Request):
         self.__current_request = request
 
-        return self.__dispatch_to_route(request)
+        data = self.__dispatch_to_route(request)
+
+        return data
 
     def __dispatch_to_route(self, request: Request):
         return self.__run_route(request, self.__find_matching_route(request))
@@ -181,29 +181,19 @@ class Router:
             .then(lambda response: self.__prepare_response(response, route))
         )
 
-    def __prepare_response(self, response: Response, route: Route):
-        content = route.run()
+    def __prepare_response(self, output: Request | Response, route: Route):
+        if isinstance(output, Response):
+            return output
 
-        if isinstance(content, ResponseFactory):
-            return response
-        elif isinstance(content, str):
-            response = self.__app.make("response")
-            response.set_content(content)
-            response.set_status("200 OK")
-            response.set_headers("Content-Type", "text/plain")
-            return response
-        elif isinstance(content, ViewFactory):
-            response = self.__app.make("response")
-            response.set_content(content.get_content())
-            response.set_status("200 OK")
-            response.set_headers("Content-Type", "text/html")
-            return response
-        elif isinstance(content, Redirector):
-            response = self.__app.make("response")
-            response.set_content("Redirecting")
-            response.set_status("302 FOUND")
-            response.set_headers("Location", content.url)
-            return response
+        # content = route.run()
+        # print(content)
+
+        response = self.__app.make("response")
+
+        response.set_content("hello")
+        response.set_status("200 OK")
+        response.set_headers("Content-Type", "text/plain")
+        response.send()
 
     def __gather_route_middleware(self, route):
         route_middleware = route.gather_middleware()

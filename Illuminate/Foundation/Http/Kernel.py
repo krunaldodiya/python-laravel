@@ -95,7 +95,9 @@ class Kernel:
     def handle(self, request: Request) -> Response:
         self.request_started_at = datetime.now()
 
-        return self.send_through_router(request)
+        response = self.send_through_router(request)
+
+        return response
 
     def send_through_router(self, request: Request):
         self.__app.instance("request", request)
@@ -113,7 +115,9 @@ class Kernel:
         def dispatching_to_router(request):
             self.__app.instance("request", request)
 
-            return self.router.dispatch(request)
+            data = self.router.dispatch(request)
+
+            return data
 
         return dispatching_to_router
 

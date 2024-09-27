@@ -8,6 +8,6 @@ kernel: HttpKernel = app.make(Kernel)
 
 request: Request = Request.capture(app)
 
-response: Response = kernel.handle(request).send()
+response: Response = kernel.handle(request)
 
 kernel.terminate(request, response)

@@ -31,7 +31,6 @@ class Database:
 
 
 class HomeController(Controller):
-
     def __init__(self, service: Service, database: Database) -> None:
         self.service = service
 
