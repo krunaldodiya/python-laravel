@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Type
 from pathlib import Path
-from django.http import HttpRequest
+
+from Illuminate.Contracts.Http.Request import Request
 
 
 class Application(ABC):
@@ -93,7 +94,7 @@ class Application(ABC):
         pass
 
     @abstractmethod
-    def handle_request(self, request: HttpRequest) -> Any:
+    def handle_request(self, request: Request) -> Any:
         """Handles the incoming HTTP request."""
         pass
 

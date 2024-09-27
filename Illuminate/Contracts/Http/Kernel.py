@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from django.http import HttpRequest
+
+from Illuminate.Contracts.Http.Request import Request
 
 
 class Kernel(ABC):
@@ -23,7 +24,7 @@ class Kernel(ABC):
         pass
 
     @abstractmethod
-    def handle(self, request: HttpRequest):
+    def handle(self, request: Request):
         """Handles the incoming request."""
         pass
 

@@ -1,20 +1,22 @@
-import re
+import os
+
+from pathlib import Path
 
 
-def validate_path(full_url, path):
-    escaped_pattern = re.escape(path)
-    regex_pattern = escaped_pattern.replace(r"\*", r".*")
+def main(loopable_directory_path: Path):
+    for root, dirs, files in os.walk(loopable_directory_path):
+        dir_path = Path(root)
 
-    if re.search(regex_pattern, full_url):
-        return True
-    else:
-        return False
+        init_file = dir_path / "__init__.py"
+
+        if not init_file.exists():
+            init_file.touch()
+
+            print(f"Created: {init_file}")
+        else:
+            print(f"Exists: {init_file}")
 
 
-url = "http://google.com/api/test"
-pattern = "api/*"
-
-if validate_path(url, pattern):
-    print("URL path matches the pattern.")
-else:
-    print("URL path does not match the pattern.")
+if __name__ == "__main__":
+    loopable_directory_path = Path("Illuminate")
+    main(loopable_directory_path)

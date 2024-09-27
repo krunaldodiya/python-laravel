@@ -1,8 +1,8 @@
 from datetime import datetime
 
-from django.http import HttpRequest, HttpResponse
-
 from Illuminate.Contracts.Foundation.Application import Application
+from Illuminate.Contracts.Http.Request import Request
+from Illuminate.Contracts.Http.Response import Response
 from Illuminate.Contracts.Routing.Router import Router as RouterContract
 from Illuminate.Foundation.Bootstrap.BootProviders import BootProviders
 from Illuminate.Foundation.Bootstrap.HandleExceptions import HandleExceptions
@@ -92,12 +92,12 @@ class Kernel:
         for key, middleware in merged_middleware.items():
             self.router.alias_middleware(key, middleware)
 
-    def handle(self, request: HttpRequest) -> HttpResponse:
+    def handle(self, request: Request) -> Response:
         self.request_started_at = datetime.now()
 
         return self.send_through_router(request)
 
-    def send_through_router(self, request: HttpRequest):
+    def send_through_router(self, request: Request):
         self.__app.instance("request", request)
 
         self.__bootstrap()
@@ -121,7 +121,7 @@ class Kernel:
         if not self.__app.has_been_bootstrapped():
             self.__app.bootstrap_with(self.bootstrappers)
 
-    def terminate(self, request: HttpRequest, response: HttpResponse):
+    def terminate(self, request: Request, response: Response):
         print("terminating")
 
     def push_middleware(self, middleware):
