@@ -225,7 +225,7 @@ class Container(ABC):
             return instance
         else:
             raise BindingResolutionException(
-                f"Binding Resolution Exception for class {abstract}"
+                f"Binding Resolution Exception for key {abstract} and class {binding_resolver}"
             )
 
     def get_dependencies(self, class_info):

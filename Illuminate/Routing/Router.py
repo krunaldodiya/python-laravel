@@ -1,3 +1,4 @@
+import types
 from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
@@ -126,10 +127,13 @@ class Router:
         return route
 
     def __convert_to_controller_action(self, action):
-        if callable(action) and (action.__name__ == "<lambda>"):
+        if isinstance(action, types.LambdaType) and action.__name__ == "<lambda>":
             return {"uses": action}
 
-        if isinstance(action, list):
+        if isinstance(action, types.FunctionType):
+            return {"uses": action}
+
+        if isinstance(action, list) and len(action) == 2:
             controller_class, controller_action = action
 
             return {
@@ -142,8 +146,10 @@ class Router:
             return {
                 "controller_class": action,
                 "controller_action": "__call__",
-                "type": "controller",
+                "type": "callable",
             }
+
+        raise Exception("BadMethodCallException")
 
     def dispatch(self, request: Request):
         self.__current_request = request

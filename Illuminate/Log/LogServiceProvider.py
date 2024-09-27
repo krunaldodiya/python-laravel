@@ -15,4 +15,4 @@ class LogServiceProvider(ServiceProvider):
         self.__app.singleton("log", lambda app: LogManager(self.__app))
 
     def boot(self):
-        print("booting LogServiceProvider")
+        pass

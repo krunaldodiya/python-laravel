@@ -84,7 +84,7 @@ class Route:
 
         type = self.action.get("type")
 
-        if type == "controller":
+        if type in ["controller", "callable"]:
             action = self.__run_controller()
         else:
             action = self.__run_callable()
@@ -109,16 +109,16 @@ class Route:
 
     def gather_middleware(self):
         if not self.__computed_middleware:
-            self.__computed_middleware = (
-                self.__middleware + self.__controller_middleware()
-            )
+            controller_middleware = self.__controller_middleware()
+
+            self.__computed_middleware = self.__middleware + controller_middleware
 
         return self.__computed_middleware
 
     def __controller_middleware(self):
         type = self.action.get("type")
 
-        if not type == "controller":
+        if type not in ["controller", "callable"]:
             return []
 
         controller_object = self.__get_controller()

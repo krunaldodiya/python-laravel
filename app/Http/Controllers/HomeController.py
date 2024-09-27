@@ -29,8 +29,11 @@ class Database:
 
 
 class HomeController(Controller):
+
     def __init__(self, service: Service, database: Database) -> None:
         self.service = service
+
+        self.middleware = []
 
     def home(self, request: Request):
         return View.make("home")
