@@ -45,6 +45,9 @@ class HomeController(Controller):
         return json.dumps(request.body)
 
     def user(self, request: Request):
-        username = request.get("username")
+        params = request.get_params()
 
-        return {"username": username, "name": self.service.another_service.get_name()}
+        return {
+            "username": params.get("username"),
+            "name": self.service.another_service.get_name(),
+        }

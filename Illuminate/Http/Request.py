@@ -2,7 +2,8 @@ from Illuminate.Http.ServerBag.WSGIServer import WSGIServer
 
 
 class Request:
-    def __init__(self, server) -> None:
+    def __init__(self, app, server) -> None:
+        self.app = app
         self.server = server
 
         self.scheme = server.scheme
@@ -19,15 +20,21 @@ class Request:
         self.cookies = server.cookies
 
     @staticmethod
-    def capture():
-        return Request.create_from_base(WSGIServer.get_server())
+    def capture(app):
+        return Request.create_from_base(app)
 
     @staticmethod
-    def create_from_base(server):
-        return Request(server)
+    def create_from_base(app):
+        server = WSGIServer.get_server()
+        return Request(app, server)
 
     def get_host(self):
         return self.host
 
     def get_full_url(self):
         return f"{self.host}{self.path}"
+
+    def get_params(self):
+        router = self.app.make("router")
+
+        return router.current_route.params

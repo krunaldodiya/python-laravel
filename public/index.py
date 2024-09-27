@@ -6,7 +6,7 @@ from bootstrap.app import app
 
 kernel: HttpKernel = app.make(Kernel)
 
-request: Request = Request.capture()
+request: Request = Request.capture(app)
 
 response: Response = kernel.handle(request).send()
 
