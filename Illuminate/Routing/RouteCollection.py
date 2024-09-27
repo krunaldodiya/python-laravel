@@ -18,9 +18,7 @@ class RouteCollection:
         self.all_routes[route.uri] = route
 
     def match(self, request: Request):
-        routes = [
-            route for route in self.routes.get(request.server.method, {}).values()
-        ]
+        routes = [route for route in self.routes.get(request.method, {}).values()]
 
         return self.__match_against_routes(request, routes)
 

@@ -350,7 +350,9 @@ class Application(Container):
     def after_resolving(self, abstract, callback):
         self.make(abstract)
 
-        callback(self, self.make("request"))
+        request = self.make("request")
+
+        callback(self, request)
 
     def bound(self, abstract):
         return self.get_instance(abstract) is not None
