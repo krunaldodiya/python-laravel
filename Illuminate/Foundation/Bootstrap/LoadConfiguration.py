@@ -7,15 +7,16 @@ from Illuminate.Contracts.Foundation.Application import Application
 
 class LoadConfiguration:
     def bootstrap(self, app: Application) -> None:
-        config_path = app.make("path.config")
+        self.__app = app
+        config_path = self.__app.make("path.config")
 
         config = Repository({}, config_path)
 
-        app.instance("config", config)
+        self.__app.instance("config", config)
 
         self.__load_configuration_files(config)
 
-        app.detect_environment(lambda: config.get("app.env", "production"))
+        self.__app.detect_environment(lambda: config.get("app.env", "production"))
 
     def __load_configuration_files(self, config):
         files = config.get_files()

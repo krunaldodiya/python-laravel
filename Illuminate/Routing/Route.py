@@ -94,9 +94,7 @@ class Route:
 
         dependencies = self.app.get_dependencies(action)
 
-        response = action(**dependencies)
-
-        return response
+        return action(**dependencies)
 
     def __get_controller(self):
         return self.app.make(self.action["controller_class"])
@@ -111,9 +109,9 @@ class Route:
 
     def gather_middleware(self):
         if not self.__computed_middleware:
-            controller_middleware = self.__controller_middleware()
-
-            self.__computed_middleware = self.__middleware + controller_middleware
+            self.__computed_middleware = (
+                self.__middleware + self.__controller_middleware()
+            )
 
         return self.__computed_middleware
 

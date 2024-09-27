@@ -118,7 +118,7 @@ class Application(Container):
             path,
         )
 
-    def use_app_path(self, path):
+    def use_app_path(self, path: Path):
         self.__app_path = path
         self.instance("path", path)
         return self
@@ -129,7 +129,7 @@ class Application(Container):
             path,
         )
 
-    def use_config_path(self, path):
+    def use_config_path(self, path: Path):
         self.__config_path = path
         self.instance("path.config", path)
         return self
@@ -144,7 +144,7 @@ class Application(Container):
             path,
         )
 
-    def use_database_path(self, path):
+    def use_database_path(self, path: Path):
         self.__database_path = path
         self.instance("path.database", path)
         return self
@@ -155,7 +155,7 @@ class Application(Container):
             path,
         )
 
-    def use_public_path(self, path):
+    def use_public_path(self, path: Path):
         self.__public_path = path
         self.instance("path.public", path)
         return self
@@ -170,7 +170,7 @@ class Application(Container):
             path,
         )
 
-    def use_resources_path(self, path):
+    def use_resources_path(self, path: Path):
         self.__resources_path = path
         self.instance("path.resources", path)
         return self
@@ -181,7 +181,7 @@ class Application(Container):
             path,
         )
 
-    def use_storage_path(self, path):
+    def use_storage_path(self, path: Path):
         self.__storage_path = path
         self.instance("path.storage", path)
         return self
@@ -192,7 +192,7 @@ class Application(Container):
             path,
         )
 
-    def use_lang_path(self, path):
+    def use_lang_path(self, path: Path):
         self.__lang_path = path
         self.instance("path.lang", path)
         return self
@@ -207,7 +207,7 @@ class Application(Container):
             path,
         )
 
-    def use_bootstrap_path(self, path):
+    def use_bootstrap_path(self, path: Path):
         self.__bootstrap_path = path
         self.instance("path.bootstrap", path)
         return self
@@ -215,7 +215,7 @@ class Application(Container):
     def environment_path(self):
         return self.__environment_path if self.__environment_path else self.base_path()
 
-    def use_environment_path(self, path):
+    def use_environment_path(self, path: Path):
         self.__environment_path = path
         return self
 
@@ -233,8 +233,8 @@ class Application(Container):
         return self
 
     def __bind_path_in_container(self):
-        self.instance("path", self.app_path())
         self.instance("path.base", self.base_path())
+        self.instance("path.app", self.app_path())
         self.instance("path.config", self.config_path())
         self.instance("path.database", self.database_path())
         self.instance("path.public", self.public_path())

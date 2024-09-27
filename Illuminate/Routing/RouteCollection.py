@@ -1,7 +1,8 @@
 import re
+
 from typing import List
-from Illuminate.Http.Request import Request
 from Illuminate.Routing.Route import Route
+from Illuminate.Contracts.Http.Request import Request
 
 
 class RouteCollection:
