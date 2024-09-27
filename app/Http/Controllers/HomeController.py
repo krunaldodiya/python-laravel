@@ -6,6 +6,8 @@ from Illuminate.Support.Facades.View import View
 from Illuminate.controller import Controller
 from Illuminate.helpers import *
 
+from werkzeug.wrappers import Response
+
 
 class AnotherService:
     def get_name(self):
@@ -47,7 +49,11 @@ class HomeController(Controller):
     def user(self, request: Request):
         params = request.get_params()
 
-        return {
-            "username": params.get("username"),
-            "name": self.service.another_service.get_name(),
-        }
+        return Response(
+            response={
+                "username": params.get("username"),
+                "name": self.service.another_service.get_name(),
+            },
+            status=200,
+            headers={"content_type": "application/json"},
+        )
