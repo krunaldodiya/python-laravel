@@ -42,7 +42,9 @@ class RoutingServiceProvider(ServiceProvider):
     def __register_url_generator(self):
         def lambda_function(app: Application):
             router = self.__app.make("router")
+
             request = self.__app.make("request")
+
             config = self.__app.make("config")
 
             routes = router.get_routes()
