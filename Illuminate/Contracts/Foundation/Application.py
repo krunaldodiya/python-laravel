@@ -137,3 +137,8 @@ class Application(ABC):
     def detect_environment(self, callback: Any):
         """Detects the application environment."""
         pass
+
+    @abstractmethod
+    def provider_is_loaded(self, base_key: str):
+        """Gets the service provider by base key."""
+        pass
