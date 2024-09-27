@@ -2,6 +2,7 @@ import types
 from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
+from Illuminate.Contracts.Http.Response import Response
 from Illuminate.Http.Request import Request
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Pipeline.Pipeline import Pipeline
@@ -177,8 +178,32 @@ class Router:
             Pipeline(self.__app)
             .send(request)
             .through(middleware)
-            .then(self.__prepare_response(route))
+            .then(lambda response: self.__prepare_response(response, route))
         )
+
+    def __prepare_response(self, response: Response, route: Route):
+        content = route.run()
+
+        if isinstance(content, ResponseFactory):
+            return response
+        elif isinstance(content, str):
+            response = self.__app.make("response")
+            response.set_content(content)
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "text/plain")
+            return response
+        elif isinstance(content, ViewFactory):
+            response = self.__app.make("response")
+            response.set_content(content.get_content())
+            response.set_status("200 OK")
+            response.set_headers("Content-Type", "text/html")
+            return response
+        elif isinstance(content, Redirector):
+            response = self.__app.make("response")
+            response.set_content("Redirecting")
+            response.set_status("302 FOUND")
+            response.set_headers("Location", content.url)
+            return response
 
     def __gather_route_middleware(self, route):
         route_middleware = route.gather_middleware()
@@ -222,30 +247,6 @@ class Router:
             return matched_route.set_router(self).set_application(self.__app)
         else:
             return None
-
-    def __prepare_response(self, request: Request, route: Route):
-        content = route.run()
-
-        if isinstance(content, ResponseFactory):
-            return response
-        elif isinstance(content, str):
-            response = self.__app.make("response")
-            response.set_content(content)
-            response.set_status("200 OK")
-            response.set_headers("Content-Type", "text/plain")
-            return response
-        elif isinstance(content, ViewFactory):
-            response = self.__app.make("response")
-            response.set_content(content.get_content())
-            response.set_status("200 OK")
-            response.set_headers("Content-Type", "text/html")
-            return response
-        elif isinstance(content, Redirector):
-            response = self.__app.make("response")
-            response.set_content("Redirecting")
-            response.set_status("302 FOUND")
-            response.set_headers("Location", content.url)
-            return response
 
     def get_routes(self):
         return self.__route_collection
