@@ -59,7 +59,7 @@ class Application(Container):
             "request": [Request],
             "response": [ResponseFactory],
             "router": [Router, RouterContract],
-            "events": [Dispatcher],
+            "event": [Dispatcher],
         }
 
         self.__set_app_path(app_path)
