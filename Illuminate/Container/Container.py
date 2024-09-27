@@ -224,7 +224,9 @@ class Container(ABC):
             self.__resolved[abstract] = True
             return instance
         else:
-            raise BindingResolutionException("Binding Resolution Exception")
+            raise BindingResolutionException(
+                f"Binding Resolution Exception for class {abstract}"
+            )
 
     def get_dependencies(self, class_info):
         args_info = getfullargspec(class_info)
