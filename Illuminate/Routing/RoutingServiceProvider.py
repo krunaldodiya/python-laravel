@@ -35,7 +35,7 @@ class RoutingServiceProvider(ServiceProvider):
 
     def __register_router(self):
         def lambda_function(app: Application):
-            return Router(self.__app, self.__app.make("events"))
+            return Router(self.__app, self.__app.make("event"))
 
         self.__app.singleton("router", lambda_function)
 

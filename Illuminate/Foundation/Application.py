@@ -86,17 +86,19 @@ class Application(Container):
         return self.__has_been_bootstrapped
 
     def before_bootstraping(self, bootstrapper, callback):
-        self.make("events").listen(f"bootstraping: {bootstrapper}", callback)
+        self.make("event").listen(f"bootstraping: {bootstrapper}", callback)
 
     def after_bootstraping(self, bootstrapper, callback):
-        self.make("events").listen(f"bootstrapped: {bootstrapper}", callback)
+        self.make("event").listen(f"bootstrapped: {bootstrapper}", callback)
 
     def bootstrap_with(self, bootstrappers):
-        events = self.make("events")
+        events = self.make("event")
 
         for bootstrapper in bootstrappers:
             events.dispatch(f"bootstraping: {bootstrapper}", [self])
+
             self.make(bootstrapper).bootstrap(self)
+
             events.dispatch(f"bootstrapped: {bootstrapper}", [self])
 
         self.__has_been_bootstrapped = True
