@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+from Illuminate.Routing.Controllers.HasMiddleware import Middleware
+
 
 class Route:
     def __init__(
@@ -86,11 +88,8 @@ class Route:
 
         return action(**dependencies)
 
-    def __get_controller(self):
-        return self.router.app.make(self.action["controller_class"])
-
     def __run_controller(self):
-        controller_object = self.__get_controller()
+        controller_object = self.router.app.make(self.action["controller_class"])
 
         return getattr(controller_object, self.action["controller_action"])
 
@@ -106,14 +105,26 @@ class Route:
         return self.__computed_middleware
 
     def __controller_middleware(self):
-        type = self.action.get("type")
+        controller_class = self.action.get("controller_class")
 
-        if type not in ["controller", "callable"]:
-            return []
+        controller_action = self.action.get("controller_action")
 
-        controller_object = self.__get_controller()
+        middleware_method = getattr(controller_class, "middleware", lambda: [])
 
-        return getattr(controller_object, "middleware", [])
+        middleware = [
+            (
+                middleware
+                if isinstance(middleware, Middleware)
+                else Middleware(middleware)
+            )
+            for middleware in middleware_method()
+        ]
+
+        return [
+            middleware.name
+            for middleware in middleware
+            if middleware.filter(controller_action)
+        ]
 
     def set_params(self, params: Dict[str, Any]):
         self.__params = params

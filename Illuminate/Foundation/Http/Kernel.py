@@ -100,16 +100,19 @@ class Kernel:
         return response
 
     def send_through_router(self, request: Request):
-        self.__app.instance("request", request)
+        try:
+            self.__app.instance("request", request)
 
-        self.__bootstrap()
+            self.__bootstrap()
 
-        return (
-            Pipeline(self.__app)
-            .send(request)
-            .through(self.middleware)
-            .then(lambda request: self.__dispatch_to_router(request))
-        )
+            return (
+                Pipeline(self.__app)
+                .send(request)
+                .through(self.middleware)
+                .then(lambda request: self.__dispatch_to_router(request))
+            )
+        except Exception as e:
+            print("Kernel.send_through_router", e)
 
     def __dispatch_to_router(self, request):
         self.__app.instance("request", request)

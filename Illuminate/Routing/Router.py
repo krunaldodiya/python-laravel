@@ -163,14 +163,17 @@ class Router:
         return self.__run_route_within_stack(request, route)
 
     def __run_route_within_stack(self, request, route):
-        middleware = self.__gather_route_middleware(route)
+        try:
+            middleware = self.__gather_route_middleware(route)
 
-        return (
-            Pipeline(self.__app)
-            .send(request)
-            .through(middleware)
-            .then(lambda response: self.__prepare_response(response, route))
-        )
+            return (
+                Pipeline(self.__app)
+                .send(request)
+                .through(middleware)
+                .then(lambda response: self.__prepare_response(response, route))
+            )
+        except Exception as e:
+            print("Router.__run_route_within_stack", e)
 
     def __prepare_response(self, output: Request | Response, route: Route):
         response = self.__app.make("response")

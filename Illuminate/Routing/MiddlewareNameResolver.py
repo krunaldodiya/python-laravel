@@ -1,12 +1,31 @@
+from typing import Any, Dict, List, Union
+
+
 class MiddlewareNameResolver:
     @classmethod
-    def resolve(cls, name, middleware, middleware_groups):
+    def resolve(
+        cls,
+        name: str,
+        map: Dict[str, Any],
+        middleware_groups: Dict[str, List[Union[str, Any]]],
+    ):
         if isinstance(name, str):
-            if middleware.get(name, None):
-                return middleware.get(name)
+            if name in map:
+                return map[name]
 
-            if middleware_groups.get(name, None):
-                return middleware_groups.get(name, None)
+            if name in middleware_groups:
+                resolved_group = []
+
+                for item in middleware_groups[name]:
+                    if isinstance(item, str):
+                        resolved_middleware = cls.resolve(item, map, middleware_groups)
+
+                        if resolved_middleware:
+                            resolved_group.append(resolved_middleware)
+                    else:
+                        resolved_group.append(item)
+
+                return resolved_group
 
         if hasattr(name, "handle"):
             return name
