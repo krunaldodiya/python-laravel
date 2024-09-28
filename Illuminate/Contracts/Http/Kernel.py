@@ -29,6 +29,6 @@ class Kernel(ABC):
         pass
 
     @abstractmethod
-    def __bootstrap(self):
+    def push_middleware(self):
         """Bootstraps the application if it hasn't been bootstrapped."""
         pass

@@ -4,10 +4,12 @@ from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Contracts.Http.Response import Response
+from Illuminate.Database.Collection import Collection
 from Illuminate.Http.Request import Request
 from Illuminate.Pipeline.Pipeline import Pipeline
+from Illuminate.Routing.MiddlewareNameResolver import MiddlewareNameResolver
 from Illuminate.Routing.Route import Route
-
+from Illuminate.Exceptions.RouteNotFoundException import RouteNotFoundException
 from Illuminate.Routing.RouteCollection import RouteCollection
 
 
@@ -23,9 +25,9 @@ class Router:
 
         self.__route_collection = RouteCollection()
 
-        self.__current_route = None
+        self.current_route = None
 
-        self.__current_request = None
+        self.current_request = None
 
         self.__middleware = {}
 
@@ -40,16 +42,20 @@ class Router:
         self.__allowed_attributes = self.__attributes.keys()
 
     @property
+    def app(self):
+        return self.__app
+
+    @property
+    def events(self):
+        return self.__events
+
+    @property
     def route_collection(self):
         return self.__route_collection
 
     @property
-    def current_route(self):
-        return self.__current_route
-
-    @property
-    def current_request(self):
-        return self.__current_request
+    def attributes(self):
+        return self.__attributes
 
     def get_middleware(self):
         return self.__middleware
@@ -115,21 +121,12 @@ class Router:
         return self.__new_route(methods, uri, controller_action)
 
     def __new_route(self, methods, uri, action):
-        route = (
-            Route(self.__attributes, methods, uri, action)
-            .set_router(self)
-            .set_application(self.__app)
-        )
-
-        self.__attributes = self.__get_default_attributes()
-
-        return route
+        return Route(self, methods, uri, action)
 
     def __convert_to_controller_action(self, action):
-        if isinstance(action, types.LambdaType) and action.__name__ == "<lambda>":
-            return {"uses": action}
-
-        if isinstance(action, types.FunctionType):
+        if isinstance(action, types.FunctionType) or (
+            isinstance(action, types.LambdaType) and action.__name__ == "<lambda>"
+        ):
             return {"uses": action}
 
         if isinstance(action, list) and len(action) == 2:
@@ -151,25 +148,19 @@ class Router:
         raise Exception("BadMethodCallException")
 
     def dispatch(self, request: Request):
-        self.__current_request = request
+        self.current_request = request
 
         data = self.__dispatch_to_route(request)
 
         return data
 
     def __dispatch_to_route(self, request: Request):
-        return self.__run_route(request, self.__find_matching_route(request))
+        matched_route = self.__find_matching_route(request)
+
+        return self.__run_route(request, matched_route)
 
     def __run_route(self, request: Request, route: Route):
-        if route:
-            return self.__run_route_within_stack(request, route)
-        else:
-            response = self.__app.make("response")
-            response.set_content("Route not found")
-            response.set_status("404 NOT_FOUND")
-            response.set_headers("Content-Type", "text/plain")
-
-            return response
+        return self.__run_route_within_stack(request, route)
 
     def __run_route_within_stack(self, request, route):
         middleware = self.__gather_route_middleware(route)
@@ -182,30 +173,33 @@ class Router:
         )
 
     def __prepare_response(self, output: Request | Response, route: Route):
-        if isinstance(output, Response):
-            return output
+        response = self.__app.make("response")
 
-        return route.run()
+        return response.prepare(output, route)
 
     def __gather_route_middleware(self, route):
         route_middleware = route.gather_middleware()
 
         resolved_middleware = self.__resolve_middlware(route_middleware)
 
-        return resolved_middleware
+        sorted_middleware = self.__sort_middleware_by_priorities(resolved_middleware)
+
+        return sorted_middleware
 
     def __resolve_middlware(self, middleware: List[Any]):
-        flattened = []
+        flattened = (
+            Collection(middleware)
+            .map(
+                lambda name: MiddlewareNameResolver.resolve(
+                    name, self.__middleware, self.__middleware_groups
+                )
+            )
+            .filter(lambda name: name is not None)
+            .flatten()
+            .to_list()
+        )
 
-        for item in middleware:
-            if isinstance(item, str) and item in self.__middleware_groups:
-                extender = self.__resolve_middlware(self.__middleware_groups[item])
-
-                flattened.extend(extender)
-            else:
-                flattened.append(item)
-
-        return self.__sort_middleware_by_priorities(flattened)
+        return flattened
 
     def __sort_middleware_by_priorities(self, middleware: List[Any]):
         priorities = []
@@ -223,12 +217,12 @@ class Router:
     def __find_matching_route(self, request: Request):
         matched_route: Route = self.__route_collection.match(request)
 
-        if matched_route:
-            self.__current_route = matched_route
-
-            return matched_route.set_router(self).set_application(self.__app)
+        if not matched_route:
+            raise RouteNotFoundException("Route does not exists")
         else:
-            return None
+            self.current_route = matched_route
+
+            return matched_route
 
     def get_routes(self):
         return self.__route_collection
@@ -239,7 +233,9 @@ class Router:
     def get_registered_paths(self):
         return self.__registered_paths
 
-    def group(self, attributes: Dict[str, Any], route_resolver: Any):
+    def group(self, attributes: Dict[str, Any] = {}, route_resolver: Any = None):
+        self.__attributes = self.__get_default_attributes()
+
         self.__set_attributes(attributes)
 
         route_resolver(self)

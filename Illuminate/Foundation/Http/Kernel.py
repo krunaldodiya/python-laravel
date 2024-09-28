@@ -108,28 +108,27 @@ class Kernel:
             Pipeline(self.__app)
             .send(request)
             .through(self.middleware)
-            .then(self.__dispatch_to_router())
+            .then(lambda request: self.__dispatch_to_router(request))
         )
 
-    def __dispatch_to_router(self):
-        def dispatching_to_router(request):
-            self.__app.instance("request", request)
+    def __dispatch_to_router(self, request):
+        self.__app.instance("request", request)
 
-            data = self.router.dispatch(request)
+        data = self.router.dispatch(request)
 
-            return data
-
-        return dispatching_to_router
+        return data
 
     def __bootstrap(self):
         if not self.__app.has_been_bootstrapped():
             self.__app.bootstrap_with(self.bootstrappers)
 
     def terminate(self, request: Request, response: Response):
-        print("terminating")
+        self.router.current_route = None
+
+        self.router.current_request = None
 
     def push_middleware(self, middleware):
-        if middleware not in self.middleware:
-            self.middleware.append(middleware)
+        if middleware not in self.__middleware:
+            self.__middleware.append(middleware)
 
         return self

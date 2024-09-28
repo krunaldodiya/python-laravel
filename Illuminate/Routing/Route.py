@@ -2,14 +2,22 @@ from typing import Any, Dict
 
 
 class Route:
-    def __init__(self, attributes: Dict[str, Any], methods, uri, action) -> None:
-        self.__name: str = attributes.get("name", "")
+    def __init__(
+        self,
+        router,
+        methods,
+        uri,
+        action,
+    ) -> None:
+        self.__router = router
 
-        self.__alias: str = attributes.get("as", "")
+        self.__name: str = self.__router.attributes.get("name", None)
 
-        self.__prefix: str = attributes.get("prefix", "")
+        self.__alias: str = self.__router.attributes.get("as", None)
 
-        self.__middleware = attributes.get("middleware", [])
+        self.__prefix: str = self.__router.attributes.get("prefix", None)
+
+        self.__middleware = self.__router.attributes.get("middleware", [])
 
         self.__computed_middleware = None
 
@@ -20,10 +28,6 @@ class Route:
         self.__methods = methods
 
         self.__params = {}
-
-        self.__app = None
-
-        self.__router = None
 
     @property
     def name(self):
@@ -62,22 +66,8 @@ class Route:
         return self.__params
 
     @property
-    def app(self):
-        return self.__app
-
-    @property
     def router(self):
         return self.__router
-
-    def set_router(self, router):
-        self.__router = router
-
-        return self
-
-    def set_application(self, app):
-        self.__app = app
-
-        return self
 
     def run(self):
         action = None
@@ -92,12 +82,12 @@ class Route:
         if not action:
             raise Exception("Invalid route action")
 
-        dependencies = self.app.get_dependencies(action)
+        dependencies = self.router.app.get_dependencies(action)
 
         return action(**dependencies)
 
     def __get_controller(self):
-        return self.app.make(self.action["controller_class"])
+        return self.router.app.make(self.action["controller_class"])
 
     def __run_controller(self):
         controller_object = self.__get_controller()
@@ -109,9 +99,9 @@ class Route:
 
     def gather_middleware(self):
         if not self.__computed_middleware:
-            self.__computed_middleware = (
-                self.__middleware + self.__controller_middleware()
-            )
+            controller_middleware = self.__controller_middleware()
+
+            self.__computed_middleware = self.__middleware + controller_middleware
 
         return self.__computed_middleware
 

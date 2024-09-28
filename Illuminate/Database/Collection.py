@@ -23,6 +23,20 @@ class Collection(list):
     def filter(self, func):
         return Collection(list(filter(func, self.items)))
 
+    def flatten(self):
+        def _flatten(items):
+            flat_list = []
+
+            for item in items:
+                if isinstance(item, list) or isinstance(item, Collection):
+                    flat_list.extend(_flatten(item))
+                else:
+                    flat_list.append(item)
+
+            return flat_list
+
+        return Collection(_flatten(self.items))
+
     def all(self):
         return all(self.items)
 
