@@ -92,16 +92,19 @@ class Application(Container):
         self.make("event").listen(f"bootstrapped: {bootstrapper}", callback)
 
     def bootstrap_with(self, bootstrappers):
-        events = self.make("event")
+        try:
+            events = self.make("event")
 
-        for bootstrapper in bootstrappers:
-            events.dispatch(f"bootstraping: {bootstrapper}", [self])
+            for bootstrapper in bootstrappers:
+                events.dispatch(f"bootstraping: {bootstrapper}", [self])
 
-            self.make(bootstrapper).bootstrap(self)
+                self.make(bootstrapper).bootstrap(self)
 
-            events.dispatch(f"bootstrapped: {bootstrapper}", [self])
+                events.dispatch(f"bootstrapped: {bootstrapper}", [self])
 
-        self.__has_been_bootstrapped = True
+            self.__has_been_bootstrapped = True
+        except Exception as e:
+            print("Application.bootstrap_with", e)
 
     def __set_app_path(self, app_path: str):
         self.__app_path = self.base_path(app_path)
@@ -267,17 +270,20 @@ class Application(Container):
             self.register(provider_class)
 
     def boot(self) -> Any:
-        if self.is_booted():
-            return
+        try:
+            if self.is_booted():
+                return
 
-        self.fire_app_callbacks(self.__booting_callbacks)
+            self.fire_app_callbacks(self.__booting_callbacks)
 
-        for service_provider in self.service_providers:
-            self.boot_provider(service_provider)
+            for service_provider in self.service_providers:
+                self.boot_provider(service_provider)
 
-        self.fire_app_callbacks(self.__booted_callbacks)
+            self.fire_app_callbacks(self.__booted_callbacks)
 
-        self.__booted = True
+            self.__booted = True
+        except Exception as e:
+            print("Application.boot", e)
 
     def fire_app_callbacks(self, callbacks):
         for callback in callbacks:
@@ -305,9 +311,12 @@ class Application(Container):
         return provider
 
     def boot_provider(self, service_provider: ServiceProviderContract) -> Any:
-        service_provider.call_booting_callbacks()
-        service_provider.boot()
-        service_provider.call_booted_callbacks()
+        try:
+            service_provider.call_booting_callbacks()
+            service_provider.boot()
+            service_provider.call_booted_callbacks()
+        except Exception as e:
+            print("Application.boot_provider", e)
 
     def booting(self, callback):
         self.__booting_callbacks.append(callback)

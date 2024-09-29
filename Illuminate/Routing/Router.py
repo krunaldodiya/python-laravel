@@ -11,6 +11,7 @@ from Illuminate.Routing.MiddlewareNameResolver import MiddlewareNameResolver
 from Illuminate.Routing.Route import Route
 from Illuminate.Exceptions.RouteNotFoundException import RouteNotFoundException
 from Illuminate.Routing.RouteCollection import RouteCollection
+from Illuminate.Routing.RouteGroup import RouteGroup
 
 
 class RouteNotFound(Exception):
@@ -37,13 +38,19 @@ class Router:
 
         self.__registered_paths = []
 
-        self.__attributes = self.__get_default_attributes()
-
-        self.__allowed_attributes = self.__attributes.keys()
+        self._group_stack = []
 
     @property
     def app(self):
         return self.__app
+
+    @property
+    def group_stack(self):
+        return self._group_stack
+
+    @group_stack.setter
+    def group_stack(self, group_stack):
+        self._group_stack = group_stack
 
     @property
     def events(self):
@@ -52,10 +59,6 @@ class Router:
     @property
     def route_collection(self):
         return self.__route_collection
-
-    @property
-    def attributes(self):
-        return self.__attributes
 
     def get_middleware(self):
         return self.__middleware
@@ -86,44 +89,50 @@ class Router:
         return self
 
     def get(self, uri, action):
-        return self.__add_route(["GET", "HEAD"], uri, action)
+        return self.add_route(["GET", "HEAD"], uri, action)
 
     def post(self, uri, action):
-        return self.__add_route(["POST"], uri, action)
+        return self.add_route(["POST"], uri, action)
 
     def put(self, uri, action):
-        return self.__add_route(["PUT"], uri, action)
+        return self.add_route(["PUT"], uri, action)
 
     def patch(self, uri, action):
-        return self.__add_route(["PATCH"], uri, action)
+        return self.add_route(["PATCH"], uri, action)
 
     def delete(self, uri, action):
-        return self.__add_route(["DELETE"], uri, action)
+        return self.add_route(["DELETE"], uri, action)
 
     def option(self, uri, action):
-        return self.__add_route(["OPTION"], uri, action)
+        return self.add_route(["OPTION"], uri, action)
 
-    def name(self, value: str):
-        self.__attributes["name"] = value
-
-        return self
-
-    def __add_route(self, methods, uri, action):
-        route = self.__create_route(methods, uri, action)
+    def add_route(self, methods, uri, action):
+        route = self._create_route(methods, uri, action)
 
         self.__route_collection.add(route)
 
         return self
 
-    def __create_route(self, methods, uri, action):
-        controller_action = self.__convert_to_controller_action(action)
+    def _create_route(self, methods, uri, action):
+        action = self._convert_to_controller_action(action)
 
-        return self.__new_route(methods, uri, controller_action)
+        route = self.new_route(
+            methods,
+            self._prefix(uri),
+            action,
+        )
 
-    def __new_route(self, methods, uri, action):
-        return Route(self, methods, uri, action)
+        if self.has_group_stack():
+            self._merge_group_attributes_into_routes(route)
 
-    def __convert_to_controller_action(self, action):
+        return route
+
+    def _merge_group_attributes_into_routes(self, route: Route):
+        route.set_action(
+            self.merge_with_last_group(route.get_action(), False),
+        )
+
+    def _convert_to_controller_action(self, action):
         if isinstance(action, types.FunctionType) or (
             isinstance(action, types.LambdaType) and action.__name__ == "<lambda>"
         ):
@@ -133,19 +142,40 @@ class Router:
             controller_class, controller_action = action
 
             return {
-                "controller_class": controller_class,
-                "controller_action": controller_action,
-                "type": "controller",
+                "controller": controller_class,
+                "uses": controller_action,
             }
 
         if hasattr(action, "__call__"):
             return {
-                "controller_class": action,
-                "controller_action": "__call__",
-                "type": "callable",
+                "controller": action,
+                "uses": "__call__",
             }
 
         raise Exception("BadMethodCallException")
+
+    def _prefix(self, uri: str):
+        last_prefix = self.get_last_group_prefix()
+
+        trimmed_last_prefix = last_prefix.strip("/")
+
+        trimmed_uri = uri.strip("/")
+
+        return f"{trimmed_last_prefix}/{trimmed_uri}"
+
+    def get_last_group_prefix(self):
+        if self.has_group_stack():
+            last_group_stack = self.group_stack[-1]
+
+            return last_group_stack.get("prefix", "")
+
+        return ""
+
+    def has_group_stack(self):
+        return bool(self.group_stack)
+
+    def new_route(self, methods, uri, action):
+        return Route(methods, uri, action).set_router(self).set_application(self.app)
 
     def dispatch(self, request: Request):
         self.current_request = request
@@ -176,9 +206,12 @@ class Router:
             print("Router.__run_route_within_stack", e)
 
     def __prepare_response(self, output: Request | Response, route: Route):
-        response = self.__app.make("response")
+        try:
+            response = self.__app.make("response")
 
-        return response.prepare(output, route)
+            return response.prepare(output, route)
+        except Exception as e:
+            print("Router.__prepare_response", e)
 
     def __gather_route_middleware(self, route):
         route_middleware = route.gather_middleware()
@@ -236,33 +269,49 @@ class Router:
     def get_registered_paths(self):
         return self.__registered_paths
 
-    def group(self, attributes: Dict[str, Any] = {}, route_resolver: Any = None):
-        self.__attributes = self.__get_default_attributes()
+    def group(self, attributes: Dict[str, Any], route_resolver: Any):
+        try:
+            group_routes = (
+                route_resolver if isinstance(route_resolver, list) else [route_resolver]
+            )
 
-        self.__set_attributes(attributes)
+            for group_route in group_routes:
+                self._update_group_stack(attributes)
 
+                self._load_routes(group_route)
+
+                self.group_stack.pop()
+        except Exception as e:
+            print("Router.group", e)
+
+    def _update_group_stack(self, attributes):
+        try:
+            if self.has_group_stack():
+                attributes = self.merge_with_last_group(attributes)
+
+            self.group_stack.append(attributes)
+        except Exception as e:
+            print("Router._update_group_stack", e)
+
+    def merge_with_last_group(self, new_attributes, prepend_existing_prefix=True):
+        last_group_stack = self.group_stack[-1]
+
+        return RouteGroup.merge(
+            new_attributes, last_group_stack, prepend_existing_prefix
+        )
+
+    def _load_routes(self, route_resolver):
         route_resolver(self)
 
-    def __set_attributes(self, attributes: Dict[str, Any]):
-        valid_attributes = {
-            key: value
-            for key, value in attributes.items()
-            if key in self.__allowed_attributes
-        }
+    def __getattr__(cls, attribute, *args, **kwargs):
+        if not cls.route_collection.all_routes:
+            return
 
-        for key, value in valid_attributes.items():
-            if key == "middleware":
-                self.__set_middleware(value)
-            else:
-                self.__attributes[key] = value
+        last_route = list(cls.route_collection.all_routes.values())[-1]
 
-    def __get_default_attributes(self):
-        return {
-            "as": None,
-            "name": None,
-            "prefix": None,
-            "middleware": [],
-        }
+        allowed_dynamic_methods = ["name", "middleware"]
 
-    def __set_middleware(self, middleware: List[Any]):
-        self.__attributes["middleware"] += middleware
+        if attribute in allowed_dynamic_methods:
+            return getattr(last_route, attribute)
+
+        raise Exception("BadMethodCallException")

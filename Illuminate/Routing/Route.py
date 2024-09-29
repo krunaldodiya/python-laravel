@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List, Self
 
 from Illuminate.Routing.Controllers.HasMiddleware import Middleware
 
@@ -6,62 +6,27 @@ from Illuminate.Routing.Controllers.HasMiddleware import Middleware
 class Route:
     def __init__(
         self,
-        router,
         methods,
         uri,
         action,
     ) -> None:
-        self.__router = router
+        self.methods = methods
 
-        self.__name: str = self.__router.attributes.get("name", None)
+        self.uri = uri
 
-        self.__alias: str = self.__router.attributes.get("as", None)
-
-        self.__prefix: str = self.__router.attributes.get("prefix", None)
-
-        self.__middleware = self.__router.attributes.get("middleware", [])
+        self.action = action
 
         self.__computed_middleware = None
 
-        self.__uri = f"{self.prefix.strip('/')}/{uri}" if self.prefix else uri
-
-        self.__action = action
-
-        self.__methods = methods
-
         self.__params = {}
 
-    @property
-    def name(self):
-        return self.__name
+        self.__router = None
 
-    @property
-    def alias(self):
-        return self.__alias
-
-    @property
-    def prefix(self):
-        return self.__prefix
-
-    @property
-    def middleware(self):
-        return self.__middleware
+        self.__application = None
 
     @property
     def computed_middleware(self):
         return self.__computed_middleware
-
-    @property
-    def uri(self):
-        return self.__uri
-
-    @property
-    def action(self):
-        return self.__action
-
-    @property
-    def methods(self):
-        return self.__methods
 
     @property
     def params(self):
@@ -71,45 +36,93 @@ class Route:
     def router(self):
         return self.__router
 
-    def run(self):
-        action = None
+    @property
+    def application(self):
+        return self.__application
 
-        type = self.action.get("type")
+    def set_router(self, router) -> Self:
+        self.__router = router
 
-        if type in ["controller", "callable"]:
-            action = self.__run_controller()
+        return self
+
+    def set_application(self, application) -> Self:
+        self.__application = application
+
+        return self
+
+    def set_action(self, action: List[Any]) -> None:
+        self.action = action
+
+    def get_action(self) -> List[Any]:
+        return self.action
+
+    def name(self, name: str):
+        alias = self.action.get("as", "")
+
+        if alias:
+            self.action["as"] = f"{alias}{name}"
         else:
-            action = self.__run_callable()
+            self.action["as"] = name
 
-        if not action:
-            raise Exception("Invalid route action")
+        return self
 
-        dependencies = self.router.app.get_dependencies(action)
+    def run(self):
+        try:
+            controller = self.action.get("controller")
 
-        return action(**dependencies)
+            if controller:
+                action = self.__run_controller(controller)
+            else:
+                action = self.__run_callable()
 
-    def __run_controller(self):
-        controller_object = self.router.app.make(self.action["controller_class"])
+            if not action:
+                raise Exception("Invalid route action")
 
-        return getattr(controller_object, self.action["controller_action"])
+            dependencies = self.application.get_dependencies(action)
+
+            return action(**dependencies)
+        except Exception as e:
+            print("Route.run", e)
+
+    def __run_controller(self, controller):
+        controller_object = self.application.make(controller)
+
+        return getattr(controller_object, self.action["uses"])
 
     def __run_callable(self):
         return self.action["uses"]
 
     def gather_middleware(self):
-        if not self.__computed_middleware:
-            controller_middleware = self.__controller_middleware()
+        try:
+            if not self.__computed_middleware:
+                self.__computed_middleware = (
+                    self.middleware() + self.controller_middleware()
+                )
 
-            self.__computed_middleware = self.__middleware + controller_middleware
+            return self.__computed_middleware
+        except Exception as e:
+            print("Route.gather_middleware", e)
 
-        return self.__computed_middleware
+    def middleware(self, middleware=None):
+        curent_middleware = self.action.get("middleware", [])
 
-    def __controller_middleware(self):
-        controller_class = self.action.get("controller_class")
+        if not middleware:
+            return curent_middleware
 
-        controller_action = self.action.get("controller_action")
+        if isinstance(middleware, str):
+            middleware = ",".split(middleware)
 
-        middleware_method = getattr(controller_class, "middleware", lambda: [])
+        if middleware:
+            self.action["middleware"] = curent_middleware + middleware
+
+        raise Exception("Invalid middleware")
+
+    def controller_middleware(self):
+        controller = self.action.get("controller")
+
+        uses = self.action.get("uses")
+
+        middleware_method = getattr(controller, "middleware", lambda: [])
 
         middleware = [
             (
@@ -120,11 +133,7 @@ class Route:
             for middleware in middleware_method()
         ]
 
-        return [
-            middleware.name
-            for middleware in middleware
-            if middleware.filter(controller_action)
-        ]
+        return [middleware.name for middleware in middleware if middleware.filter(uses)]
 
     def set_params(self, params: Dict[str, Any]):
         self.__params = params
