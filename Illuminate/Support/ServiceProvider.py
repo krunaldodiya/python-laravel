@@ -1,6 +1,7 @@
 import importlib
 
 from abc import ABC, abstractmethod
+import sys
 
 
 class ServiceProvider(ABC):
@@ -34,4 +35,10 @@ class ServiceProvider(ABC):
             callbacks()
 
     def load_routes_from(self, loader: str):
-        importlib.import_module(loader)
+        try:
+            if loader in sys.modules:
+                importlib.reload(sys.modules[loader])
+            else:
+                importlib.import_module(loader)
+        except Exception as e:
+            print("Route import error:", e)
