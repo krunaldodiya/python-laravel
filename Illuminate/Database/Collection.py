@@ -1,4 +1,7 @@
-class Collection(list):
+from Illuminate.Database.Serializable import Serializable
+
+
+class Collection(Serializable):
     def __init__(self, items=None):
         self.items = items if items is not None else []
 
@@ -38,7 +41,17 @@ class Collection(list):
         return Collection(_flatten(self.items))
 
     def all(self):
-        return all(self.items)
+        return self.items
+
+    def sort(self, callback=None):
+        items = self.items[:]
+
+        if callback and callable(callback):
+            items = sorted(items, key=lambda x: callback(x))
+        else:
+            items = sorted(items)
+
+        return Collection(items)
 
     def map(self, func):
         return Collection(list(map(func, self.items)))

@@ -1,23 +1,21 @@
+from typing import Any
+from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Http.ServerBag.WSGIServer import WSGIServer
 
 
 class Request:
-    def __init__(self, app, server) -> None:
+    def __init__(self, app: Application, server: Any) -> None:
         self.app = app
         self.server = server
+        self.router = self.app.make("router")
 
-        self.scheme = server.scheme
-        self.server_name = server.server_name
-        self.server_port = server.server_port
-        self.host = server.host
+        self.__dict__.update(self.server.__dict__)
 
-        self.query_string = server.query_string
-        self.method = server.method
-        self.path = server.path
-        self.raw_path = server.raw_path
+    def __getattr__(self, name):
+        return getattr(self.server, name)
 
-        self.headers = server.headers
-        self.cookies = server.cookies
+    def __getitem__(self, key):
+        return self.server[key]
 
     @staticmethod
     def capture(app):
@@ -26,15 +24,11 @@ class Request:
     @staticmethod
     def create_from_base(app):
         server = WSGIServer.get_server()
+        return Request.create_from(app, server)
+
+    @staticmethod
+    def create_from(app, server):
         return Request(app, server)
 
-    def get_host(self):
-        return self.host
-
-    def get_full_url(self):
-        return f"{self.host}{self.path}"
-
     def get_params(self):
-        router = self.app.make("router")
-
-        return router.current_route.params
+        return self.router.current_route.params

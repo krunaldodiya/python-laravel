@@ -3,7 +3,6 @@ import types
 from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
-from Illuminate.Contracts.Http.Response import Response
 from Illuminate.Database.Collection import Collection
 from Illuminate.Http.Request import Request
 from Illuminate.Pipeline.Pipeline import Pipeline
@@ -205,11 +204,12 @@ class Router:
         except Exception as e:
             print("Router.__run_route_within_stack", e)
 
-    def __prepare_response(self, output: Request | Response, route: Route):
+    def __prepare_response(self, output: Request | Any, route: Route):
         try:
-            response = self.__app.make("response")
+            if isinstance(output, Request):
+                return route.run()
 
-            return response.prepare(output, route)
+            return output
         except Exception as e:
             print("Router.__prepare_response", e)
 
