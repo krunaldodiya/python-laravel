@@ -1,6 +1,7 @@
 import re
 import unicodedata
-import inflect
+
+from pluralizer import Pluralizer
 
 
 class Str:
@@ -10,14 +11,14 @@ class Str:
     _pascal_cache = {}
     _plural_cache = {}
     _singular_cache = {}
-    _inflector = None
+    _pluralizer = None
 
     @staticmethod
-    def get_inflector():
-        if not Str._inflector:
-            Str._inflector = inflect.engine()
+    def get_pluralizer():
+        if not Str._pluralizer:
+            Str._pluralizer = Pluralizer()
 
-        return Str._inflector
+        return Str._pluralizer
 
     @staticmethod
     def plural(word):
@@ -25,7 +26,7 @@ class Str:
         if word in Str._plural_cache:
             return Str._plural_cache[word]
 
-        plural_form = Str.get_inflector().plural(word)
+        plural_form = Str.get_pluralizer().plural(word)
         Str._plural_cache[word] = plural_form
         return plural_form
 
@@ -35,7 +36,7 @@ class Str:
         if word in Str._singular_cache:
             return Str._singular_cache[word]
 
-        singular_form = Str.get_inflector().singular_noun(word) or word
+        singular_form = Str.get_pluralizer().singular(word) or word
         Str._singular_cache[word] = singular_form
         return singular_form
 
