@@ -93,11 +93,14 @@ class Kernel:
             self.router.alias_middleware(key, middleware)
 
     def handle(self, request: Request) -> Response:
-        self.request_started_at = datetime.now()
+        try:
+            self.request_started_at = datetime.now()
 
-        response = self.send_through_router(request)
+            response = self.send_through_router(request)
 
-        return response
+            return response
+        except Exception as e:
+            print("Kernel.handle", e)
 
     def send_through_router(self, request: Request):
         try:
@@ -125,10 +128,8 @@ class Kernel:
         if not self.__app.has_been_bootstrapped():
             self.__app.bootstrap_with(self.bootstrappers)
 
-    def terminate(self, request: Request, response: Response):
-        self.router.current_route = None
-
-        self.router.current_request = None
+    def terminate(self):
+        self.__app.forget_binding("request")
 
     def push_middleware(self, middleware):
         if middleware not in self.__middleware:

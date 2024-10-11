@@ -195,12 +195,14 @@ class Router:
         try:
             middleware = self.__gather_route_middleware(route)
 
-            return (
+            output = (
                 Pipeline(self.__app)
                 .send(request)
                 .through(middleware)
                 .then(lambda response: self.__prepare_response(response, route))
             )
+
+            return output
         except Exception as e:
             print("Router.__run_route_within_stack", e)
 
@@ -223,19 +225,22 @@ class Router:
         return sorted_middleware
 
     def __resolve_middlware(self, middleware: List[Any]):
-        flattened = (
-            Collection(middleware)
-            .map(
-                lambda name: MiddlewareNameResolver.resolve(
-                    name, self.__middleware, self.__middleware_groups
+        try:
+            flattened = (
+                Collection(middleware)
+                .map(
+                    lambda name: MiddlewareNameResolver.resolve(
+                        name, self.__middleware, self.__middleware_groups
+                    )
                 )
+                .filter(lambda name: name is not None)
+                .flatten()
+                .to_list()
             )
-            .filter(lambda name: name is not None)
-            .flatten()
-            .to_list()
-        )
 
-        return flattened
+            return flattened
+        except Exception as e:
+            print("router.__resolve_middlware", e)
 
     def __sort_middleware_by_priorities(self, middleware: List[Any]):
         priorities = []

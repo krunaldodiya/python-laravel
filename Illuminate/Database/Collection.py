@@ -1,243 +1,253 @@
-import json
-import random
+import inspect
 
-from itertools import zip_longest
-from functools import reduce
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Self,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from Illuminate.Database.Serializable import Serializable
 
+T = TypeVar("T")
 
-class Collection(Serializable):
-    def __init__(self, items=None):
-        self.items = items or []
 
-    def take(self, limit):
-        return self.__class__(self.items[:limit])
+class Collection(Serializable, Generic[T]):
+    def __init__(self, items=[]) -> None:
+        super().__init__([])
 
-    def first(self, callback=None):
+        self.items = self._get_iterable_items(items)
+
+    def filter(self, callback: Optional[Callable[[Any], Any]] = None) -> Self:
+        if not callback:
+            return self.__class__(self.items)
+
+        self._check_is_callable(callback)
+
+        args_count = self._get_callback_arg_count(callback)
+
+        results = [
+            (key, value)
+            for key, value in self.items
+            if callback(*self._build_args(key, value, args_count))
+        ]
+
+        return self.__class__(results)
+
+    def map(self, callback: Callable[[Any], Any]) -> Self:
+        self._check_is_callable(callback)
+
+        args_count = self._get_callback_arg_count(callback)
+
+        results = [
+            (key, callback(*self._build_args(key, value, args_count)))
+            for key, value in self.items
+        ]
+
+        return self.__class__(results)
+
+    def group_by(self, callback_or_string: Union[Callable[[Any], Any], str]):
+        if callable(callback_or_string):
+            self._check_is_callable(callback_or_string)
+            group_callback = callback_or_string
+
+        if isinstance(callback_or_string, str):
+            group_callback = lambda item: (
+                item.get(callback_or_string, "")
+                if isinstance(item, dict)
+                else getattr(item, callback_or_string, "")
+            )
+
+        args_count = self._get_callback_arg_count(group_callback)
+
+        results = {}
+
+        for key, value in self.items:
+            args = self._build_args(key, value, args_count)
+
+            def get_group_key(group_callback, args):
+                try:
+                    return group_callback(*args)
+                except:
+                    return ""
+
+            group_key = get_group_key(group_callback, args)
+
+            results.setdefault(group_key, self.__class__([])).push(value)
+
+        return self.__class__([(key, items) for key, items in results.items()])
+
+    def sort_by(
+        self,
+        callback_or_string: Union[Callable[[Any], Any], str],
+        descending: bool = False,
+    ):
+        if callable(callback_or_string):
+            self._check_is_callable(callback_or_string)
+            sort_callback = callback_or_string
+
+        if isinstance(callback_or_string, str):
+            sort_callback = lambda item: (
+                item.get(callback_or_string, "")
+                if isinstance(item, dict)
+                else getattr(item, callback_or_string, "")
+            )
+
+        args_count = self._get_callback_arg_count(sort_callback)
+
+        if args_count == 2:
+            sort_key = lambda item: sort_callback(item[1], item[0])
+        else:
+            sort_key = lambda item: sort_callback(item[1])
+
+        data = sorted(self.items, key=sort_key, reverse=descending)
+
+        return self.__class__([(key, items) for key, items in data])
+
+    def sort(
+        self,
+        sort_callback: Optional[Callable[[Any], Any]] = None,
+        descending: bool = True,
+    ):
+        if sort_callback:
+            self._check_is_callable(sort_callback)
+
+            return self.sort_by(sort_callback, descending)
+
+        sort_callback = lambda item, key: key
+
+        return self.sort_by(sort_callback, descending)
+
+    def sort_keys(
+        self,
+        sort_callback: Optional[Callable[[Any], Any]] = None,
+        descending: bool = False,
+    ):
+        if sort_callback:
+            self._check_is_callable(sort_callback)
+
+            return self.sort_by(sort_callback, descending)
+
+        sort_callback = lambda item, key: key
+
+        return self.sort_by(sort_callback, descending)
+
+    def first(self, callback: Optional[Callable[[Any], bool]] = None) -> Any:
+        items = self.items
+
         if callback:
-            return next((item for item in self.items if callback(item)), None)
-        return self.items[0] if self.items else None
+            items = self.filter(callback)
 
-    def last(self, callback=None):
+        return items[0][1] if items else None
+
+    def last(self, callback: Optional[Callable[[Any], bool]] = None) -> Any:
+        items = list(reversed(self.items))
+
         if callback:
-            return next((item for item in reversed(self.items) if callback(item)), None)
-        return self.items[-1] if self.items else None
+            items = self.filter(callback)
 
-    def all(self):
-        return self.items
+        return items[0][1] if items else None
 
-    def avg(self, key=None):
-        items = self.pluck(key).all() if key else self.items
-        return sum(items) / len(items) if items else 0
-
-    def max(self, key=None):
-        items = self.pluck(key).all() if key else self.items
-        return max(items) if items else None
-
-    def chunk(self, size):
-        return self.__class__(
-            [self.items[i : i + size] for i in range(0, len(self.items), size)]
-        )
-
-    def collapse(self):
-        return self.__class__([item for sublist in self.items for item in sublist])
-
-    def contains(self, value):
-        if callable(value):
-            return any(value(item) for item in self.items)
-        return value in self.items
-
-    def count(self):
+    def count(self) -> List[Any]:
         return len(self.items)
 
-    def diff(self, items):
-        return self.__class__([item for item in self.items if item not in items])
+    def all(self) -> Dict:
+        return self.items
 
-    def each(self, callback):
-        self._check_is_callable(callback)
+    def to_list(self) -> List[Any]:
+        return [item for _, item in self.items]
 
-        for item in self.items:
-            callback(item)
+    def to_dict(self) -> Dict[Any, Any]:
+        return dict(self.items)
 
-        return self
+    def to_base(self) -> Self:
+        return Collection(self.items)
 
-    def every(self, callback):
-        self._check_is_callable(callback)
+    def values(self) -> Self:
+        return self.__class__(self.to_list())
 
-        return all(callback(item) for item in self.items)
+    def push(self, item) -> Self:
+        key = self._get_key()
 
-    def filter(self, callback):
-        self._check_is_callable(callback)
-
-        return self.__class__(list(filter(callback, self.items)))
-
-    def flatten(self, depth=-1):
-        def _flatten(items, d):
-            flat_list = []
-            for item in items:
-                if isinstance(item, (list, Collection)) and (d != 0):
-                    flat_list.extend(_flatten(item, d - 1))
-                else:
-                    flat_list.append(item)
-            return flat_list
-
-        return self.__class__(_flatten(self.items, depth))
-
-    def forget(self, index):
-        if 0 <= index < len(self.items):
-            del self.items[index]
-        return self
-
-    def for_page(self, page, per_page):
-        start = (page - 1) * per_page
-        return self.__class__(self.items[start : start + per_page])
-
-    def get(self, key, default=None):
-        return self.items[key] if 0 <= key < len(self.items) else default
-
-    def implode(self, separator):
-        return separator.join(map(str, self.items))
-
-    def is_empty(self):
-        return len(self.items) == 0
-
-    def map(self, callback):
-        self._check_is_callable(callback)
-
-        return self.__class__(list(map(callback, self.items)))
-
-    def map_into(self, klass):
-        return self.__class__([klass(item) for item in self.items])
-
-    def merge(self, items):
-        return self.__class__(self.items + list(items))
-
-    def pluck(self, key):
-        return self.__class__(
-            [
-                item.get(key) if isinstance(item, dict) else getattr(item, key, None)
-                for item in self.items
-            ]
-        )
-
-    def pop(self):
-        return self.items.pop()
-
-    def prepend(self, value):
-        self.items.insert(0, value)
-        return self
-
-    def pull(self, key):
-        value = self.items[key]
-        del self.items[key]
-        return value
-
-    def push(self, value):
-        self.items.append(value)
-        return self
-
-    def put(self, key, value):
-        if isinstance(self.items, dict):
-            self.items[key] = value
-        return self
-
-    def random(self, num=None):
-        if num:
-            return random.sample(self.items, num)
-        return random.choice(self.items)
-
-    def reduce(self, callback, initial=None):
-        self._check_is_callable(callback)
-
-        return reduce(callback, self.items, initial)
-
-    def reject(self, callback):
-        self._check_is_callable(callback)
-
-        return self.__class__([item for item in self.items if not callback(item)])
-
-    def reverse(self):
-        return self.__class__(list(reversed(self.items)))
-
-    def serialize(self):
-        return json.dumps(self.items)
-
-    def shift(self):
-        return self.items.pop(0) if self.items else None
-
-    def sort(self, callback=None):
-        self._check_is_callable(callback)
-
-        return self.__class__(sorted(self.items, key=callback if callback else None))
-
-    def sum(self, key=None):
-        items = self.pluck(key).all() if key else self.items
-        return sum(items)
-
-    def group_by(self, key):
-        grouped = {}
-        for item in self.items:
-            group_key = (
-                item[key] if isinstance(item, dict) else getattr(item, key, None)
-            )
-            grouped.setdefault(group_key, []).append(item)
-        return grouped
-
-    def transform(self, callback):
-        self._check_is_callable(callback)
-
-        self.items = [callback(item) for item in self.items]
+        self.items.append((key, item))
 
         return self
 
-    def unique(self, key=None):
-        seen = set()
-        result = []
-        for item in self.items:
-            val = item[key] if isinstance(item, dict) else getattr(item, key, item)
-            if val not in seen:
-                seen.add(val)
-                result.append(item)
-        return self.__class__(result)
+    def flatten(self, depth: int = -1) -> Self:
+        flattened_items = self._flatten([value for _, value in self.items], 0, depth)
 
-    def where(self, key, value):
-        return self.__class__(
-            [
-                item
-                for item in self.items
-                if item.get(key) == value
-                if isinstance(item, dict)
-            ]
-        )
+        return self.__class__(flattened_items)
 
-    def zip(self, *arrays):
-        return self.__class__(list(zip_longest(self.items, *arrays)))
+    def _build_args(self, key, value, args_count):
+        return [value, key] if args_count == 2 else [value]
 
-    def collect(self):
-        return self.__class__(self.items)
-
-    def to_list(self):
-        return [item for item in self.items]
-
-    def to_json(self):
-        return json.dumps(self.items)
-
-    def values(self):
-        return self.__class__(self.items)
-
-    def flatten(self, depth=-1):
-        return self.__class__(self._flatten_items(self.items, depth))
-
-    def _check_is_callable(self, callback):
+    def _check_is_callable(self, callback: Any) -> None:
         if not callable(callback):
-            raise ValueError("The 'callback' should be a function")
+            raise ValueError("Expected a callable")
 
-    def _flatten_items(self, items, depth):
-        result = []
-        for item in items:
-            if isinstance(item, (list, Collection)) and (depth != 0):
-                result.extend(self._flatten_items(item, depth - 1))
+    def _get_callback_arg_count(self, callback: Callable) -> int:
+        sig = inspect.signature(callback)
+
+        args = [
+            p
+            for p in sig.parameters.values()
+            if p.kind in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY)
+        ]
+
+        return len(args)
+
+    def _get_iterable_items(self, items: Any) -> List:
+        if isinstance(items, Collection):
+            return items.items
+
+        if isinstance(items, List):
+            if all(isinstance(item, Tuple) for item in items):
+                return items
             else:
-                result.append(item)
-        return result
+                return [(key, item) for key, item in enumerate(items)]
+
+        if isinstance(items, Dict):
+            return [(key, item) for key, item in items.items()]
+
+        if isinstance(items, Tuple):
+            return [items]
+
+        return [(0, items)]
+
+    def _get_key(self):
+        if not self.count():
+            return 0
+
+        keys = [key for key, _ in self.items if isinstance(key, int)]
+
+        if keys:
+            return max(keys) + 1
+
+        return 0
+
+    def _flatten(self, items: Any, current_depth: int, depth: int) -> List[Any]:
+        if not isinstance(items, (list, tuple, dict)) or (depth == 0):
+            return [items]
+
+        flattened = []
+
+        for item in items:
+            if isinstance(item, (list, tuple, dict)) and (
+                depth == -1 or current_depth < depth
+            ):
+                if isinstance(item, dict):
+                    flattened.extend(
+                        self._flatten(list(item.values()), current_depth + 1, depth)
+                    )
+                else:
+                    flattened.extend(self._flatten(item, current_depth + 1, depth))
+            else:
+                flattened.append(item)
+
+        return flattened

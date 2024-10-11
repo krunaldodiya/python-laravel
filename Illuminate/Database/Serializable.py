@@ -1,4 +1,7 @@
-class Serializable(list):
+class Serializable:
+    def __init__(self, items=[]) -> None:
+        self.items = items
+
     def __getitem__(self, index):
         return self.items[index]
 
@@ -15,4 +18,4 @@ class Serializable(list):
         return len(self.items)
 
     def __repr__(self):
-        return repr(self.items)
+        return f"{self.__class__.__name__}({dict(self.items)})"

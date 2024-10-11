@@ -29,6 +29,11 @@ class Kernel(ABC):
         pass
 
     @abstractmethod
+    def terminate(self, request: Request):
+        """Handles the incoming request."""
+        pass
+
+    @abstractmethod
     def push_middleware(self):
         """Bootstraps the application if it hasn't been bootstrapped."""
         pass
