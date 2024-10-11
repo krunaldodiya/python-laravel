@@ -361,7 +361,7 @@ class Application(Container):
 
         request = self.make("request")
 
-        callback(self, request)
+        callback(request, self)
 
     def bound(self, abstract):
         return self.get_instance(abstract) is not None
