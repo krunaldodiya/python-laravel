@@ -41,4 +41,4 @@ class ServiceProvider(ABC):
             else:
                 importlib.import_module(loader)
         except Exception as e:
-            print("Route import error:", e)
+            raise e

@@ -13,6 +13,6 @@ class Facade(type):
 
         return getattr(binding, attribute)
 
-    @staticmethod
-    def set_facade_application(app: Application):
-        Facade.app = app
+    @classmethod
+    def set_facade_application(cls, app: Application):
+        cls.app = app

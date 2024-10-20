@@ -26,13 +26,13 @@ from Illuminate.Support.Facades.Config import Config
 
 
 class Application(Container):
-    def __init__(self, app_path: str = "app") -> None:
+    def __init__(self, base_path: str = None) -> None:
         super().__init__()
 
         self.__environment_path = None
         self.__environment_file = ".env"
 
-        self.__base_path = Path().cwd()
+        self.__base_path = None
         self.__app_path = None
         self.__config_path = None
 
@@ -62,11 +62,12 @@ class Application(Container):
             "event": [Dispatcher],
         }
 
-        self.__set_app_path(app_path)
+        if base_path:
+            self.set_base_path(base_path)
 
-        self.__register_base_bindings()
-        self.__register_base_providers()
-        self.__register_container_aliases()
+        self._register_base_bindings()
+        self._register_base_providers()
+        self.register_container_aliases()
 
     @property
     def service_providers(self):
@@ -104,10 +105,10 @@ class Application(Container):
 
             self.__has_been_bootstrapped = True
         except Exception as e:
-            print("Application.bootstrap_with", e)
+            raise e
 
-    def __set_app_path(self, app_path: str):
-        self.__app_path = self.base_path(app_path)
+    def set_base_path(self, base_path: str):
+        self.__base_path = base_path
 
         self.__bind_path_in_container()
 
@@ -253,11 +254,11 @@ class Application(Container):
         self.use_bootstrap_path(self.bootstrap_path())
         self.use_lang_path(self.lang_path())
 
-    def __register_base_bindings(self):
+    def _register_base_bindings(self):
         self.instance("app", self)
         self.instance(Container, self)
 
-    def __register_base_providers(self):
+    def _register_base_providers(self):
         self.register(AuthServiceProvider)
         self.register(EventServiceProvider)
         self.register(LogServiceProvider)
@@ -283,7 +284,7 @@ class Application(Container):
 
             self.__booted = True
         except Exception as e:
-            print("Application.boot", e)
+            raise e
 
     def fire_app_callbacks(self, callbacks):
         for callback in callbacks:
@@ -316,7 +317,7 @@ class Application(Container):
             service_provider.boot()
             service_provider.call_booted_callbacks()
         except Exception as e:
-            print("Application.boot_provider", e)
+            raise e
 
     def booting(self, callback):
         self.__booting_callbacks.append(callback)
@@ -330,7 +331,7 @@ class Application(Container):
     def __mark_as_registered(self, base_key):
         self.__loaded_providers[base_key] = True
 
-    def __register_container_aliases(self):
+    def register_container_aliases(self):
         for abstract_alias, aliases in self.__container_aliases.items():
             for alias in aliases:
                 self.alias(abstract_alias, alias)

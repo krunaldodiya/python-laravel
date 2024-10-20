@@ -1,6 +1,6 @@
 from typing import Any, Callable, List
 from Illuminate.Contracts.Auth.Access.Gate import Gate as GateContract
-from Illuminate.Database.Collection import Collection
+from Illuminate.Support.Collection import Collection
 
 
 class Gate(GateContract):

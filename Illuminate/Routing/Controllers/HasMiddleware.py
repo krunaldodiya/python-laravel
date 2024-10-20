@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import List, Self, Union
 
 
@@ -49,6 +49,6 @@ class Middleware:
 
 
 class HasMiddleware(ABC):
-    @staticmethod
-    def middleware() -> List[Union[str, Middleware]]:
+    @classmethod
+    def middleware(cls) -> List[Union[str, Middleware]]:
         raise NotImplementedError("Must implement middleware method")

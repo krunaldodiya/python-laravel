@@ -100,7 +100,7 @@ class Kernel:
 
             return response
         except Exception as e:
-            print("Kernel.handle", e)
+            raise e
 
     def send_through_router(self, request: Request):
         try:
@@ -115,7 +115,7 @@ class Kernel:
                 .then(lambda request: self.__dispatch_to_router(request))
             )
         except Exception as e:
-            print("Kernel.send_through_router", e)
+            raise e
 
     def __dispatch_to_router(self, request):
         self.__app.instance("request", request)
@@ -125,8 +125,11 @@ class Kernel:
         return data
 
     def __bootstrap(self):
-        if not self.__app.has_been_bootstrapped():
-            self.__app.bootstrap_with(self.bootstrappers)
+        try:
+            if not self.__app.has_been_bootstrapped():
+                self.__app.bootstrap_with(self.bootstrappers)
+        except Exception as e:
+            raise e
 
     def terminate(self):
         self.__app.forget_binding("request")

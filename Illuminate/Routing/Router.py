@@ -1,9 +1,8 @@
-import types
-
 from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
-from Illuminate.Database.Collection import Collection
+from Illuminate.Helpers.Util import Util
+from Illuminate.Support.Collection import Collection
 from Illuminate.Http.Request import Request
 from Illuminate.Pipeline.Pipeline import Pipeline
 from Illuminate.Routing.MiddlewareNameResolver import MiddlewareNameResolver
@@ -132,9 +131,7 @@ class Router:
         )
 
     def _convert_to_controller_action(self, action):
-        if isinstance(action, types.FunctionType) or (
-            isinstance(action, types.LambdaType) and action.__name__ == "<lambda>"
-        ):
+        if Util.is_function(action):
             return {"uses": action}
 
         if isinstance(action, list) and len(action) == 2:
@@ -204,7 +201,7 @@ class Router:
 
             return output
         except Exception as e:
-            print("Router.__run_route_within_stack", e)
+            raise e
 
     def __prepare_response(self, output: Request | Any, route: Route):
         try:
@@ -213,7 +210,7 @@ class Router:
 
             return output
         except Exception as e:
-            print("Router.__prepare_response", e)
+            raise e
 
     def __gather_route_middleware(self, route):
         route_middleware = route.gather_middleware()
@@ -240,7 +237,7 @@ class Router:
 
             return flattened
         except Exception as e:
-            print("router.__resolve_middlware", e)
+            raise e
 
     def __sort_middleware_by_priorities(self, middleware: List[Any]):
         priorities = []
@@ -287,7 +284,7 @@ class Router:
 
                 self.group_stack.pop()
         except Exception as e:
-            print("Router.group", e)
+            raise e
 
     def _update_group_stack(self, attributes):
         try:
@@ -296,7 +293,7 @@ class Router:
 
             self.group_stack.append(attributes)
         except Exception as e:
-            print("Router._update_group_stack", e)
+            raise e
 
     def merge_with_last_group(self, new_attributes, prepend_existing_prefix=True):
         last_group_stack = self.group_stack[-1]

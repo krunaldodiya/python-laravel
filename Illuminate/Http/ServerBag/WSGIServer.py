@@ -19,14 +19,14 @@ class WSGIServer:
         self.headers = {}
         self.cookies = {}
 
-    @staticmethod
-    def create_server(environ, start_response):
+    @classmethod
+    def create_server(cls, environ, start_response):
         server = WSGIServer(environ, start_response)
         WSGIServer.__server = server
         return server
 
-    @staticmethod
-    def get_server():
+    @classmethod
+    def get_server(cls):
         return WSGIServer.__server
 
     def send(self):

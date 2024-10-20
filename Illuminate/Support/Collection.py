@@ -1,5 +1,3 @@
-import inspect
-
 from typing import (
     Any,
     Callable,
@@ -14,6 +12,7 @@ from typing import (
 )
 
 from Illuminate.Database.Serializable import Serializable
+from Illuminate.Helpers.Util import Util
 
 T = TypeVar("T")
 
@@ -26,16 +25,14 @@ class Collection(Serializable, Generic[T]):
 
     def filter(self, callback: Optional[Callable[[Any], Any]] = None) -> Self:
         if not callback:
-            return self.__class__(self.items)
+            return self.__class__([(key, value) for key, value in self.items if value])
 
         self._check_is_callable(callback)
-
-        args_count = self._get_callback_arg_count(callback)
 
         results = [
             (key, value)
             for key, value in self.items
-            if callback(*self._build_args(key, value, args_count))
+            if Util.callback_with_dynamic_args(callback, [value, key])
         ]
 
         return self.__class__(results)
@@ -43,14 +40,43 @@ class Collection(Serializable, Generic[T]):
     def map(self, callback: Callable[[Any], Any]) -> Self:
         self._check_is_callable(callback)
 
-        args_count = self._get_callback_arg_count(callback)
-
         results = [
-            (key, callback(*self._build_args(key, value, args_count)))
+            (key, Util.callback_with_dynamic_args(callback, [value, key]))
             for key, value in self.items
         ]
 
         return self.__class__(results)
+
+    def each(self, callback: Callable[[Any], Any]) -> Self:
+        self._check_is_callable(callback)
+
+        for key, value in self.items:
+            status = Util.callback_with_dynamic_args(callback, [value, key])
+
+            if status == False:
+                break
+
+        return self
+
+    def unique(self, unique_key_callback: Callable) -> Self:
+        unique_ids = []
+
+        def is_unique(value, key):
+            id = Util.callback_with_dynamic_args(unique_key_callback, [value, key])
+
+            if id in unique_ids:
+                return False
+
+            unique_ids.append(id)
+
+            return True
+
+        return self.filter(lambda value, key: is_unique(value, key))
+
+    def transform(self, callback: Callable[[Any], Any]) -> Self:
+        self.items = self.map(callback).all()
+
+        return self
 
     def group_by(self, callback_or_string: Union[Callable[[Any], Any], str]):
         if callable(callback_or_string):
@@ -64,22 +90,12 @@ class Collection(Serializable, Generic[T]):
                 else getattr(item, callback_or_string, "")
             )
 
-        args_count = self._get_callback_arg_count(group_callback)
-
         results = {}
 
         for key, value in self.items:
-            args = self._build_args(key, value, args_count)
+            group_key = Util.callback_with_dynamic_args(group_callback, [value, key])
 
-            def get_group_key(group_callback, args):
-                try:
-                    return group_callback(*args)
-                except:
-                    return ""
-
-            group_key = get_group_key(group_callback, args)
-
-            results.setdefault(group_key, self.__class__([])).push(value)
+            results.setdefault(group_key or "", self.__class__([])).push(value)
 
         return self.__class__([(key, items) for key, items in results.items()])
 
@@ -99,12 +115,9 @@ class Collection(Serializable, Generic[T]):
                 else getattr(item, callback_or_string, "")
             )
 
-        args_count = self._get_callback_arg_count(sort_callback)
-
-        if args_count == 2:
-            sort_key = lambda item: sort_callback(item[1], item[0])
-        else:
-            sort_key = lambda item: sort_callback(item[1])
+        sort_key = lambda item: Util.callback_with_dynamic_args(
+            sort_callback, [item[1], item[0]]
+        )
 
         data = sorted(self.items, key=sort_key, reverse=descending)
 
@@ -160,6 +173,14 @@ class Collection(Serializable, Generic[T]):
     def all(self) -> Dict:
         return self.items
 
+    def concat(self, items) -> Self:
+        results = self.__class__(self.items)
+
+        for _, item in items:
+            results.push(item)
+
+        return results
+
     def to_list(self) -> List[Any]:
         return [item for _, item in self.items]
 
@@ -180,7 +201,7 @@ class Collection(Serializable, Generic[T]):
         return self
 
     def flatten(self, depth: int = -1) -> Self:
-        flattened_items = self._flatten([value for _, value in self.items], 0, depth)
+        flattened_items = self._flatten(self.items, 0, depth)
 
         return self.__class__(flattened_items)
 
@@ -190,17 +211,6 @@ class Collection(Serializable, Generic[T]):
     def _check_is_callable(self, callback: Any) -> None:
         if not callable(callback):
             raise ValueError("Expected a callable")
-
-    def _get_callback_arg_count(self, callback: Callable) -> int:
-        sig = inspect.signature(callback)
-
-        args = [
-            p
-            for p in sig.parameters.values()
-            if p.kind in (p.POSITIONAL_OR_KEYWORD, p.POSITIONAL_ONLY)
-        ]
-
-        return len(args)
 
     def _get_iterable_items(self, items: Any) -> List:
         if isinstance(items, Collection):
@@ -231,22 +241,23 @@ class Collection(Serializable, Generic[T]):
 
         return 0
 
-    def _flatten(self, items: Any, current_depth: int, depth: int) -> List[Any]:
-        if not isinstance(items, (list, tuple, dict)) or (depth == 0):
-            return [items]
-
+    def _flatten(
+        self, items: List[Tuple[Any, Any]], current_depth: int, depth: int
+    ) -> List[Tuple[Any, Any]]:
         flattened = []
 
-        for item in items:
-            if isinstance(item, (list, tuple, dict)) and (
+        for key, item in items:
+            if isinstance(item, (list, Collection)) and (
                 depth == -1 or current_depth < depth
             ):
-                if isinstance(item, dict):
+                if isinstance(item, list):
                     flattened.extend(
-                        self._flatten(list(item.values()), current_depth + 1, depth)
+                        self._flatten(enumerate(item), current_depth + 1, depth)
                     )
                 else:
-                    flattened.extend(self._flatten(item, current_depth + 1, depth))
+                    flattened.extend(
+                        self._flatten(item.items, current_depth + 1, depth)
+                    )
             else:
                 flattened.append(item)
 

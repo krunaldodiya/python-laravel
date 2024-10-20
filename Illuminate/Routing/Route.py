@@ -1,6 +1,9 @@
 from typing import Any, Dict, List, Self
+from urllib.parse import parse_qs, urlparse
 
+from Illuminate.Contracts.Http.Request import Request
 from Illuminate.Routing.Controllers.HasMiddleware import Middleware
+from Illuminate.Support.Collection import Collection
 
 
 class Route:
@@ -18,7 +21,9 @@ class Route:
 
         self.__computed_middleware = None
 
-        self.__params = {}
+        self.__route_params = {}
+
+        self.__query_params = {}
 
         self.__router = None
 
@@ -29,8 +34,12 @@ class Route:
         return self.__computed_middleware
 
     @property
-    def params(self):
-        return self.__params
+    def route_params(self):
+        return self.__route_params
+
+    @property
+    def query_params(self):
+        return self.__query_params
 
     @property
     def router(self):
@@ -82,7 +91,7 @@ class Route:
 
             return action(**dependencies)
         except Exception as e:
-            print("Route.run", e)
+            raise e
 
     def __run_controller(self, controller):
         controller_object = self.application.make(controller)
@@ -101,7 +110,7 @@ class Route:
 
             return self.__computed_middleware
         except Exception as e:
-            print("Route.gather_middleware", e)
+            raise e
 
     def middleware(self, middleware=None):
         curent_middleware = self.action.get("middleware", [])
@@ -135,7 +144,24 @@ class Route:
 
         return [middleware.name for middleware in middleware if middleware.filter(uses)]
 
-    def set_params(self, params: Dict[str, Any]):
-        self.__params = params
+    def set_query_params(self, request: Request) -> Self:
+        full_url = request.get_full_url()
+
+        parsed_url = urlparse(full_url)
+
+        parsed_query_string = parse_qs(parsed_url.query)
+
+        collection = (
+            Collection(parsed_query_string)
+            .map(lambda value: value[0] if len(value) == 1 else value)
+            .to_dict()
+        )
+
+        self.__query_params = collection
+
+        return self
+
+    def set_route_params(self, route_params: Dict[str, Any]) -> Self:
+        self.__route_params = route_params
 
         return self

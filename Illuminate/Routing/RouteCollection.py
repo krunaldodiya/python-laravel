@@ -53,6 +53,6 @@ class RouteCollection:
         match = re.match(pattern, request_path)
 
         if match:
-            return route.set_params(match.groupdict())
+            return route.set_route_params(match.groupdict()).set_query_params(request)
         else:
             return None

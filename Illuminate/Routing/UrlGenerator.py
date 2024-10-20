@@ -4,8 +4,13 @@ from Illuminate.Routing.RouteCollection import RouteCollection
 
 class UrlGenerator:
     def __init__(
-        self, routes: RouteCollection, request: Request, asset_url: str
+        self, routes: RouteCollection, request: Request, asset_root: str
     ) -> None:
-        self.__routes = routes
-        self.__request = request
-        self.__asset_url = asset_url
+        self._routes = routes
+        self._asset_root = asset_root
+        self._request = None
+
+        self.set_request(request)
+
+    def set_request(self, request: Request):
+        self._request = request

@@ -7,11 +7,11 @@ class ASGIServer:
     receive = None
     send = None
 
-    @staticmethod
-    def init(self, scope, receive, send) -> None:
-        self.scope = scope
-        self.receive = receive
-        self.send = send
+    @classmethod
+    def init(cls, scope, receive, send) -> None:
+        cls.scope = scope
+        cls.receive = receive
+        cls.send = send
 
     def create(self):
         self.client_url = self.__parse_url(self.scope["client"])
