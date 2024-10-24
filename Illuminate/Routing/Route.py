@@ -3,7 +3,7 @@ from urllib.parse import parse_qs, urlparse
 
 from Illuminate.Contracts.Http.Request import Request
 from Illuminate.Routing.Controllers.HasMiddleware import Middleware
-from Illuminate.Support.Collection import Collection
+from Illuminate.Collections.Collection import Collection
 
 
 class Route:
@@ -64,6 +64,11 @@ class Route:
 
     def get_action(self) -> List[Any]:
         return self.action
+
+    def bind(self, request: Request) -> Self:
+        self.request = request
+
+        return self
 
     def name(self, name: str):
         alias = self.action.get("as", "")

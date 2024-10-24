@@ -1,25 +1,10 @@
-from typing import List
+from Illuminate.Support.HigherOrderTapProxy import HigherOrderTapProxy
 
 
-def data_get(target, key: List[str] | str = None, default=None):
-    if not key or not isinstance(key, (list, str)):
-        return target
+def tap(value, callback=None):
+    if not callback:
+        return HigherOrderTapProxy(value)
 
-    if isinstance(key, str):
-        key = key.split(".")
+    callback(value)
 
-    try:
-        for item in key:
-            item = item.replace("->", ".")
-
-            if isinstance(target, dict):
-                target = target.get(item, default)
-            else:
-                target = getattr(target, item, default)
-
-            if target is default:
-                break
-
-        return target
-    except (AttributeError, KeyError, TypeError):
-        return default
+    return value

@@ -1,6 +1,6 @@
 from typing import Any, Callable, List
 from Illuminate.Contracts.Auth.Access.Gate import Gate as GateContract
-from Illuminate.Support.Collection import Collection
+from Illuminate.Collections.Collection import Collection
 
 
 class Gate(GateContract):
@@ -88,8 +88,11 @@ class Gate(GateContract):
             after_callbacks=self.after_callbacks,
         )
 
-    def authorize(self, ability, resource):
-        return True
+    def authorize(self, ability, arguments):
+        allowed = self.inspect(ability, arguments)
+
+        if not allowed:
+            raise Exception("Unauthorized")
 
     def resolve_user(self):
         return self.user_resolver()

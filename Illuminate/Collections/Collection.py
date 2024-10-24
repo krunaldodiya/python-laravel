@@ -1,3 +1,4 @@
+import operator
 from typing import (
     Any,
     Callable,
@@ -173,6 +174,28 @@ class Collection(Serializable, Generic[T]):
     def all(self) -> Dict:
         return self.items
 
+    def partition(
+        self, partition_key, partition_operator=None, partition_value=None
+    ) -> Tuple[Self, Self]:
+        passed = {}
+        failed = {}
+
+        callback = (
+            partition_key
+            if Util.is_function(partition_key)
+            else lambda value: self._safe_eval(
+                getattr(value), partition_operator, partition_value
+            )
+        )
+
+        for key, value in self.items:
+            if Util.callback_with_dynamic_args(callback, [value, key]):
+                passed[key] = value
+            else:
+                failed[key] = value
+
+        return [self.__class__(passed), self.__class__(failed)]
+
     def concat(self, items) -> Self:
         results = self.__class__(self.items)
 
@@ -191,7 +214,7 @@ class Collection(Serializable, Generic[T]):
         return Collection(self.items)
 
     def values(self) -> Self:
-        return self.__class__(self.to_list())
+        return self.__class__([value for _, value in self.items])
 
     def push(self, item) -> Self:
         key = self._get_key()
@@ -262,3 +285,19 @@ class Collection(Serializable, Generic[T]):
                 flattened.append(item)
 
         return flattened
+
+    def _safe_eval(self, key, oper, value):
+        ops = {
+            "+": operator.add,
+            "-": operator.sub,
+            "*": operator.mul,
+            "/": operator.truediv,
+            "%": operator.mod,
+            "**": operator.pow,
+            "==": operator.eq,
+        }
+
+        if oper in ops:
+            return eval(key, ops[oper], value)
+        else:
+            raise ValueError("Invalid operator")

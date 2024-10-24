@@ -2,7 +2,10 @@ from typing import Any, Dict, List
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Helpers.Util import Util
-from Illuminate.Support.Collection import Collection
+from Illuminate.Routing.Events.PreparingResponse import PreparingResponse
+from Illuminate.Routing.Events.ResponsePrepared import ResponsePrepared
+from Illuminate.Routing.Events.Routing import Routing
+from Illuminate.Collections.Collection import Collection
 from Illuminate.Http.Request import Request
 from Illuminate.Pipeline.Pipeline import Pipeline
 from Illuminate.Routing.MiddlewareNameResolver import MiddlewareNameResolver
@@ -10,6 +13,7 @@ from Illuminate.Routing.Route import Route
 from Illuminate.Exceptions.RouteNotFoundException import RouteNotFoundException
 from Illuminate.Routing.RouteCollection import RouteCollection
 from Illuminate.Routing.RouteGroup import RouteGroup
+from Illuminate.Support.helpers import tap
 
 
 class RouteNotFound(Exception):
@@ -22,7 +26,7 @@ class Router:
 
         self.__events = events
 
-        self.__route_collection = RouteCollection()
+        self._route_collection = RouteCollection()
 
         self.current_route = None
 
@@ -56,7 +60,7 @@ class Router:
 
     @property
     def route_collection(self):
-        return self.__route_collection
+        return self._route_collection
 
     def get_middleware(self):
         return self.__middleware
@@ -107,7 +111,7 @@ class Router:
     def add_route(self, methods, uri, action):
         route = self._create_route(methods, uri, action)
 
-        self.__route_collection.add(route)
+        self._route_collection.add(route)
 
         return self
 
@@ -176,43 +180,46 @@ class Router:
     def dispatch(self, request: Request):
         self.current_request = request
 
-        data = self.__dispatch_to_route(request)
+        data = self.dispatch_to_route(request)
 
         return data
 
-    def __dispatch_to_route(self, request: Request):
-        matched_route = self.__find_matching_route(request)
+    def dispatch_to_route(self, request: Request):
+        return self._run_route(request, self._find_route(request))
 
-        return self.__run_route(request, matched_route)
+    def _run_route(self, request: Request, route: Route):
+        request.set_route_resolver(lambda: route)
 
-    def __run_route(self, request: Request, route: Route):
-        return self.__run_route_within_stack(request, route)
+        return self.prepare_response(
+            request,
+            self._run_route_within_stack(route, request),
+        )
 
-    def __run_route_within_stack(self, request, route):
-        try:
-            middleware = self.__gather_route_middleware(route)
+    def _run_route_within_stack(self, route, request):
+        middleware = self.gather_route_middleware(route)
 
-            output = (
-                Pipeline(self.__app)
-                .send(request)
-                .through(middleware)
-                .then(lambda response: self.__prepare_response(response, route))
-            )
+        output = (
+            Pipeline(self.__app)
+            .send(request)
+            .through(middleware)
+            .then(lambda request: self.prepare_response(request, route.run()))
+        )
 
-            return output
-        except Exception as e:
-            raise e
+        return output
 
-    def __prepare_response(self, output: Request | Any, route: Route):
-        try:
-            if isinstance(output, Request):
-                return route.run()
+    @classmethod
+    def to_response(cls, request: Request, response: Any):
+        return response
 
-            return output
-        except Exception as e:
-            raise e
+    def prepare_response(self, request: Request, response: Any):
+        self.events.dispatch(PreparingResponse(request, response))
 
-    def __gather_route_middleware(self, route):
+        return tap(
+            self.to_response(request, response),
+            lambda response: self.events.dispatch(ResponsePrepared(request, response)),
+        )
+
+    def gather_route_middleware(self, route):
         route_middleware = route.gather_middleware()
 
         resolved_middleware = self.__resolve_middlware(route_middleware)
@@ -222,22 +229,17 @@ class Router:
         return sorted_middleware
 
     def __resolve_middlware(self, middleware: List[Any]):
-        try:
-            flattened = (
-                Collection(middleware)
-                .map(
-                    lambda name: MiddlewareNameResolver.resolve(
-                        name, self.__middleware, self.__middleware_groups
-                    )
+        return (
+            Collection(middleware)
+            .map(
+                lambda name: MiddlewareNameResolver.resolve(
+                    name, self.__middleware, self.__middleware_groups
                 )
-                .filter(lambda name: name is not None)
-                .flatten()
-                .to_list()
             )
-
-            return flattened
-        except Exception as e:
-            raise e
+            .filter(lambda name: name is not None)
+            .flatten()
+            .to_list()
+        )
 
     def __sort_middleware_by_priorities(self, middleware: List[Any]):
         priorities = []
@@ -252,18 +254,21 @@ class Router:
 
         return priorities + non_priorities
 
-    def __find_matching_route(self, request: Request):
-        matched_route: Route = self.__route_collection.match(request)
+    def _find_route(self, request: Request):
+        self.events.dispatch(Routing())
 
-        if not matched_route:
-            raise RouteNotFoundException("Route does not exists")
-        else:
-            self.current_route = matched_route
+        route = self._route_collection.match(request)
 
-            return matched_route
+        self.current_route = route
+
+        route.set_application(self.__app)
+
+        self.__app.instance(Route, route)
+
+        return route
 
     def get_routes(self):
-        return self.__route_collection
+        return self._route_collection
 
     def register_path(self, path: str):
         self.__registered_paths.append(path)
@@ -272,28 +277,22 @@ class Router:
         return self.__registered_paths
 
     def group(self, attributes: Dict[str, Any], route_resolver: Any):
-        try:
-            group_routes = (
-                route_resolver if isinstance(route_resolver, list) else [route_resolver]
-            )
+        group_routes = (
+            route_resolver if isinstance(route_resolver, list) else [route_resolver]
+        )
 
-            for group_route in group_routes:
-                self._update_group_stack(attributes)
+        for group_route in group_routes:
+            self._update_group_stack(attributes)
 
-                self._load_routes(group_route)
+            self._load_routes(group_route)
 
-                self.group_stack.pop()
-        except Exception as e:
-            raise e
+            self.group_stack.pop()
 
     def _update_group_stack(self, attributes):
-        try:
-            if self.has_group_stack():
-                attributes = self.merge_with_last_group(attributes)
+        if self.has_group_stack():
+            attributes = self.merge_with_last_group(attributes)
 
-            self.group_stack.append(attributes)
-        except Exception as e:
-            raise e
+        self.group_stack.append(attributes)
 
     def merge_with_last_group(self, new_attributes, prepend_existing_prefix=True):
         last_group_stack = self.group_stack[-1]
