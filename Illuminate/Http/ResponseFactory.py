@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any, Type
 
+from Illuminate.Contracts.Support.JsonSerializable import JsonSerializable
 from Illuminate.Support.Facades.Event import Event
 
 if TYPE_CHECKING:
@@ -42,3 +43,23 @@ class ResponseFactory:
         Event.dispatch("response_sent", {"response": self})
 
         return self
+
+    @classmethod
+    def serialize(cls, data):
+        if isinstance(data, JsonSerializable):
+            return cls.serialize(data.json_serialize())
+        elif (
+            isinstance(data, list)
+            and len(data)
+            and all([isinstance(item, tuple) and len(item) == 2 for item in data])
+        ):
+            if all([isinstance(item[0], int) for item in data]):
+                return cls.serialize(list(dict(data).values()))
+            else:
+                return cls.serialize(dict(data))
+        elif isinstance(data, (list, tuple)):
+            return [cls.serialize(item) for item in data]
+        elif isinstance(data, (dict, set)):
+            return {key: cls.serialize(value) for key, value in data.items()}
+        else:
+            return data

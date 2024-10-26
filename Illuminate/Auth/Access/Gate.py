@@ -1,6 +1,6 @@
 from typing import Any, Callable, List
+from Illuminate.Collections.helpers import collect
 from Illuminate.Contracts.Auth.Access.Gate import Gate as GateContract
-from Illuminate.Collections.Collection import Collection
 
 
 class Gate(GateContract):
@@ -39,7 +39,7 @@ class Gate(GateContract):
     def check(self, ability: str, arguments: List[Any] = []) -> bool:
         abilities = [ability] if isinstance(ability, str) else ability
 
-        return Collection(abilities).every(
+        return collect(abilities).every(
             lambda ability: self.inspect(ability, arguments)
         )
 

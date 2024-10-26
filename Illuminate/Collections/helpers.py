@@ -1,31 +1,38 @@
-from typing import List
+from typing import Any, Dict, List, Union
 
-from Illuminate.Helpers.Util import Util
+
+def collect(items: Dict[Any, Any] = {}, *args, **kwargs):
+    from Illuminate.Collections.Collection import Collection
+
+    return Collection(items, *args, **kwargs)
 
 
 def value(target, *args, **kwargs):
-    return target(*args, **kwargs) if Util.is_function(target) else target
+    return target(*args, **kwargs) if callable(target) else target
 
 
-def data_get(target, key: List[str] | str = None, default=None):
+def data_get(target: Any, key: Union[List[str], str] = None, default=None):
     if not key or not isinstance(key, (list, str)):
         return target
 
-    if isinstance(key, str):
-        key = key.split(".")
+    data_keys = [key] if isinstance(key, str) else key
 
-    try:
-        for item in key:
+    for data_key in data_keys:
+        keys = data_key.split(".")
+        current = target
+
+        for item in keys:
             item = item.replace("->", ".")
 
-            if isinstance(target, dict):
-                target = target.get(item, default)
+            if isinstance(current, dict):
+                current = current.get(item, default)
             else:
-                target = getattr(target, item, default)
+                current = getattr(current, item, default)
 
-            if target is default:
+            if current is default:
                 break
 
-        return target
-    except (AttributeError, KeyError, TypeError):
-        return default
+        if current is not default:
+            return current
+
+    return default

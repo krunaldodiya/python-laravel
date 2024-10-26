@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Self
 from urllib.parse import parse_qs, urlparse
 
+from Illuminate.Collections.helpers import collect
 from Illuminate.Contracts.Http.Request import Request
 from Illuminate.Routing.Controllers.HasMiddleware import Middleware
-from Illuminate.Collections.Collection import Collection
 
 
 class Route:
@@ -156,13 +156,11 @@ class Route:
 
         parsed_query_string = parse_qs(parsed_url.query)
 
-        collection = (
-            Collection(parsed_query_string)
+        self.__query_params = dict(
+            collect(parsed_query_string)
             .map(lambda value: value[0] if len(value) == 1 else value)
-            .to_dict()
+            .all()
         )
-
-        self.__query_params = collection
 
         return self
 

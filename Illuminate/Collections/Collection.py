@@ -1,303 +1,223 @@
-import operator
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Self,
-    Tuple,
-    TypeVar,
-    Union,
-)
+import math
 
-from Illuminate.Database.Serializable import Serializable
+from typing import Any, Callable, Dict, Generic, List, Optional, Self, Tuple, Union
+from typing_extensions import TypeVar
+from Illuminate.Collections.Arr import Arr
+from Illuminate.Collections.Traits.EnumeratesValues import EnumeratesValues
 from Illuminate.Helpers.Util import Util
+from Illuminate.Contracts.Collections.Collection import Collection as CollectionContract
 
 T = TypeVar("T")
 
 
-class Collection(Serializable, Generic[T]):
-    def __init__(self, items=[]) -> None:
-        super().__init__([])
+class Collection(EnumeratesValues, CollectionContract, Generic[T]):
+    def __init__(self, items: Dict[Any, Any] = {}, *args, **kwargs) -> None:
+        super().__init__({})
 
-        self.items = self._get_iterable_items(items)
+        self._items = self._get_iterable_items(items)
+
+    def all(self) -> Dict[Any, Any]:
+        return [(key, item) for key, item in self._items.items()]
+
+    def count(self) -> int:
+        return len(self._items)
+
+    def to_base(self) -> Self:
+        return Collection(self._items)
+
+    def values(self) -> Self:
+        return self.__class__(self.to_list())
 
     def filter(self, callback: Optional[Callable[[Any], Any]] = None) -> Self:
         if not callback:
-            return self.__class__([(key, value) for key, value in self.items if value])
+            return self.__class__({key: value for key, value in self if value})
 
         self._check_is_callable(callback)
 
-        results = [
-            (key, value)
-            for key, value in self.items
+        results = {
+            key: value
+            for key, value in self
             if Util.callback_with_dynamic_args(callback, [value, key])
-        ]
+        }
 
         return self.__class__(results)
 
     def map(self, callback: Callable[[Any], Any]) -> Self:
         self._check_is_callable(callback)
 
-        results = [
-            (key, Util.callback_with_dynamic_args(callback, [value, key]))
-            for key, value in self.items
-        ]
+        results = {
+            key: Util.callback_with_dynamic_args(callback, [value, key])
+            for key, value in self
+        }
 
         return self.__class__(results)
 
-    def each(self, callback: Callable[[Any], Any]) -> Self:
-        self._check_is_callable(callback)
+    def first(
+        self, callback: Optional[Callable[[Any], bool]] = None, default=None
+    ) -> Any:
+        items = self._items
 
-        for key, value in self.items:
-            status = Util.callback_with_dynamic_args(callback, [value, key])
+        if callback:
+            items = self.filter(callback)._items
 
-            if status == False:
-                break
+        return list(items.values())[0] if items else default
 
-        return self
+    def last(
+        self, callback: Optional[Callable[[Any], bool]] = None, default=None
+    ) -> Any:
+        items = self._items
 
-    def unique(self, unique_key_callback: Callable) -> Self:
-        unique_ids = []
+        if callback:
+            items = self.filter(callback)._items
 
-        def is_unique(value, key):
-            id = Util.callback_with_dynamic_args(unique_key_callback, [value, key])
+        return list(items.values())[-1] if items else default
 
-            if id in unique_ids:
-                return False
+    def push(self, value) -> Self:
+        key = self._get_key()
 
-            unique_ids.append(id)
-
-            return True
-
-        return self.filter(lambda value, key: is_unique(value, key))
-
-    def transform(self, callback: Callable[[Any], Any]) -> Self:
-        self.items = self.map(callback).all()
+        self._items[key] = value
 
         return self
 
-    def group_by(self, callback_or_string: Union[Callable[[Any], Any], str]):
-        if callable(callback_or_string):
-            self._check_is_callable(callback_or_string)
-            group_callback = callback_or_string
+    def pull(self, key, default=None) -> Self:
+        return Arr.pull(self._items, key, default)
 
-        if isinstance(callback_or_string, str):
-            group_callback = lambda item: (
-                item.get(callback_or_string, "")
-                if isinstance(item, dict)
-                else getattr(item, callback_or_string, "")
+    def get(self, key, default=None) -> Self:
+        return self._items[key] if key in self._items else default
+
+    def unique(self, key: Optional[Callable] = None) -> Self:
+        if not key:
+            unique_values = set(self._items.values())
+
+            return self.__class__(
+                {key: value for key, value in enumerate(unique_values)}
             )
 
-        results = {}
+        callback = self._value_retriever(key)
 
-        for key, value in self.items:
-            group_key = Util.callback_with_dynamic_args(group_callback, [value, key])
+        exists = []
 
-            results.setdefault(group_key or "", self.__class__([])).push(value)
+        def is_unique(value, key):
+            id = Util.callback_with_dynamic_args(callback, [value, key])
 
-        return self.__class__([(key, items) for key, items in results.items()])
+            if id in exists:
+                return True
+
+            exists.append(id)
+
+        return self.reject(is_unique)
+
+    def transform(self, callback: Callable[[Any], Any]) -> Self:
+        self._items = self.map(callback)._items
+
+        return self
+
+    def concat(self, items: Union[List, Dict] = []) -> Self:
+        if isinstance(items, list):
+            iterator = enumerate(items)
+        elif isinstance(items, dict):
+            iterator = items.items()
+        elif isinstance(items, Collection):
+            iterator = items
+        else:
+            raise Exception(
+                "Invalid items iterator, must be list, dict or Collection object."
+            )
+
+        results = self.__class__(self._items)
+
+        for key, item in iterator:
+            results.push(item)
+
+        return results
+
+    def flatten(self, depth: int = math.inf) -> Self:
+        flattened_items = Arr.flatten(self, depth)
+
+        return self.__class__(flattened_items)
+
+    def group_by(self, callback_or_string: Union[Callable[[Any], Any], str]):
+        group_callback = self._value_retriever(callback_or_string)
+
+        results: Dict[Any, Self] = {}
+
+        for key, value in self:
+            group_keys = Util.callback_with_dynamic_args(group_callback, [value, key])
+
+            def get_group_keys(group_keys):
+                if isinstance(group_keys, str):
+                    return [group_keys]
+
+            group_keys = get_group_keys(group_keys) or [""]
+
+            for group_key in group_keys:
+                results.setdefault(group_key, self.__class__({})).push(value)
+
+        return self.__class__(results)
 
     def sort_by(
         self,
         callback_or_string: Union[Callable[[Any], Any], str],
         descending: bool = False,
-    ):
-        if callable(callback_or_string):
-            self._check_is_callable(callback_or_string)
-            sort_callback = callback_or_string
+    ) -> Self:
+        sort_callback = self._value_retriever(callback_or_string)
 
-        if isinstance(callback_or_string, str):
-            sort_callback = lambda item: (
-                item.get(callback_or_string, "")
-                if isinstance(item, dict)
-                else getattr(item, callback_or_string, "")
-            )
-
-        sort_key = lambda item: Util.callback_with_dynamic_args(
-            sort_callback, [item[1], item[0]]
+        sorted_items = self._sort_items(
+            self,
+            key=lambda item: Util.callback_with_dynamic_args(
+                sort_callback, [item[1], item[0]]
+            ),
+            descending=descending,
         )
 
-        data = sorted(self.items, key=sort_key, reverse=descending)
-
-        return self.__class__([(key, items) for key, items in data])
+        return self.__class__(sorted_items)
 
     def sort(
         self,
         sort_callback: Optional[Callable[[Any], Any]] = None,
-        descending: bool = True,
-    ):
-        if sort_callback:
-            self._check_is_callable(sort_callback)
-
-            return self.sort_by(sort_callback, descending)
-
-        sort_callback = lambda item, key: key
-
-        return self.sort_by(sort_callback, descending)
-
-    def sort_keys(
-        self,
-        sort_callback: Optional[Callable[[Any], Any]] = None,
         descending: bool = False,
-    ):
+    ) -> Self:
         if sort_callback:
             self._check_is_callable(sort_callback)
 
             return self.sort_by(sort_callback, descending)
 
-        sort_callback = lambda item, key: key
-
-        return self.sort_by(sort_callback, descending)
-
-    def first(self, callback: Optional[Callable[[Any], bool]] = None) -> Any:
-        items = self.items
-
-        if callback:
-            items = self.filter(callback)
-
-        return items[0][1] if items else None
-
-    def last(self, callback: Optional[Callable[[Any], bool]] = None) -> Any:
-        items = list(reversed(self.items))
-
-        if callback:
-            items = self.filter(callback)
-
-        return items[0][1] if items else None
-
-    def count(self) -> List[Any]:
-        return len(self.items)
-
-    def all(self) -> Dict:
-        return self.items
-
-    def partition(
-        self, partition_key, partition_operator=None, partition_value=None
-    ) -> Tuple[Self, Self]:
-        passed = {}
-        failed = {}
-
-        callback = (
-            partition_key
-            if Util.is_function(partition_key)
-            else lambda value: self._safe_eval(
-                getattr(value), partition_operator, partition_value
-            )
+        sorted_items = self._sort_items(
+            self._items.items(), key=lambda item: str(item[1]), descending=descending
         )
 
-        for key, value in self.items:
-            if Util.callback_with_dynamic_args(callback, [value, key]):
-                passed[key] = value
-            else:
-                failed[key] = value
+        return self.__class__(sorted_items)
 
-        return [self.__class__(passed), self.__class__(failed)]
+    def sort_keys(self, descending: bool = False) -> Self:
+        sorted_items = self._sort_items(
+            self._items.items(), key=lambda item: str(item[0]), descending=descending
+        )
 
-    def concat(self, items) -> Self:
-        results = self.__class__(self.items)
+        return self.__class__(sorted_items)
 
-        for _, item in items:
-            results.push(item)
+    def _sort_items(
+        self,
+        items: List[Tuple[Any, Any]],
+        key: Optional[Callable[[Tuple[Any, Any]], Any]] = None,
+        descending: bool = False,
+    ) -> Dict[Any, Any]:
+        return dict(sorted(items, key=key, reverse=descending))
 
-        return results
-
-    def to_list(self) -> List[Any]:
-        return [item for _, item in self.items]
-
-    def to_dict(self) -> Dict[Any, Any]:
-        return dict(self.items)
-
-    def to_base(self) -> Self:
-        return Collection(self.items)
-
-    def values(self) -> Self:
-        return self.__class__([value for _, value in self.items])
-
-    def push(self, item) -> Self:
-        key = self._get_key()
-
-        self.items.append((key, item))
-
-        return self
-
-    def flatten(self, depth: int = -1) -> Self:
-        flattened_items = self._flatten(self.items, 0, depth)
-
-        return self.__class__(flattened_items)
-
-    def _build_args(self, key, value, args_count):
-        return [value, key] if args_count == 2 else [value]
-
-    def _check_is_callable(self, callback: Any) -> None:
-        if not callable(callback):
-            raise ValueError("Expected a callable")
-
-    def _get_iterable_items(self, items: Any) -> List:
-        if isinstance(items, Collection):
-            return items.items
-
-        if isinstance(items, List):
-            if all(isinstance(item, Tuple) for item in items):
-                return items
-            else:
-                return [(key, item) for key, item in enumerate(items)]
-
-        if isinstance(items, Dict):
-            return [(key, item) for key, item in items.items()]
-
-        if isinstance(items, Tuple):
-            return [items]
-
-        return [(0, items)]
-
-    def _get_key(self):
-        if not self.count():
-            return 0
-
-        keys = [key for key, _ in self.items if isinstance(key, int)]
-
-        if keys:
-            return max(keys) + 1
-
-        return 0
-
-    def _flatten(
-        self, items: List[Tuple[Any, Any]], current_depth: int, depth: int
-    ) -> List[Tuple[Any, Any]]:
-        flattened = []
-
-        for key, item in items:
-            if isinstance(item, (list, Collection)) and (
-                depth == -1 or current_depth < depth
+    def _get_iterable_items(self, data: Any) -> Dict[Tuple, Any]:
+        try:
+            if isinstance(data, Collection):
+                return data._items
+            elif (
+                isinstance(data, list)
+                and len(data)
+                and all([isinstance(item, tuple) and len(item) == 2 for item in data])
             ):
-                if isinstance(item, list):
-                    flattened.extend(
-                        self._flatten(enumerate(item), current_depth + 1, depth)
-                    )
-                else:
-                    flattened.extend(
-                        self._flatten(item.items, current_depth + 1, depth)
-                    )
+                return dict(data)
+            elif isinstance(data, (list, tuple)):
+                return {key: item for key, item in enumerate(data)}
+            elif isinstance(data, dict):
+                return data
             else:
-                flattened.append(item)
-
-        return flattened
-
-    def _safe_eval(self, key, oper, value):
-        ops = {
-            "+": operator.add,
-            "-": operator.sub,
-            "*": operator.mul,
-            "/": operator.truediv,
-            "%": operator.mod,
-            "**": operator.pow,
-            "==": operator.eq,
-        }
-
-        if oper in ops:
-            return eval(key, ops[oper], value)
-        else:
-            raise ValueError("Invalid operator")
+                return {0: data}
+        except Exception as e:
+            print("Collection._get_iterable_items", e)

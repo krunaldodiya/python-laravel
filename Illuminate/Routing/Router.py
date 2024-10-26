@@ -1,23 +1,18 @@
 from typing import Any, Dict, List
+from Illuminate.Collections.helpers import collect
 from Illuminate.Contracts.Events import Dispatcher
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Helpers.Util import Util
 from Illuminate.Routing.Events.PreparingResponse import PreparingResponse
 from Illuminate.Routing.Events.ResponsePrepared import ResponsePrepared
 from Illuminate.Routing.Events.Routing import Routing
-from Illuminate.Collections.Collection import Collection
 from Illuminate.Http.Request import Request
 from Illuminate.Pipeline.Pipeline import Pipeline
 from Illuminate.Routing.MiddlewareNameResolver import MiddlewareNameResolver
 from Illuminate.Routing.Route import Route
-from Illuminate.Exceptions.RouteNotFoundException import RouteNotFoundException
 from Illuminate.Routing.RouteCollection import RouteCollection
 from Illuminate.Routing.RouteGroup import RouteGroup
 from Illuminate.Support.helpers import tap
-
-
-class RouteNotFound(Exception):
-    pass
 
 
 class Router:
@@ -230,7 +225,7 @@ class Router:
 
     def __resolve_middlware(self, middleware: List[Any]):
         return (
-            Collection(middleware)
+            collect(middleware)
             .map(
                 lambda name: MiddlewareNameResolver.resolve(
                     name, self.__middleware, self.__middleware_groups
@@ -238,15 +233,15 @@ class Router:
             )
             .filter(lambda name: name is not None)
             .flatten()
-            .to_list()
+            .all()
         )
 
-    def __sort_middleware_by_priorities(self, middleware: List[Any]):
+    def __sort_middleware_by_priorities(self, middleware: Dict[Any, Any]):
         priorities = []
 
         non_priorities = []
 
-        for item in middleware:
+        for key, item in middleware:
             if item in self.__middleware_priorities:
                 priorities.append(item)
             else:

@@ -1,3 +1,4 @@
+import inspect
 import json
 
 from Illuminate.Contracts.Foundation.Application import Application
@@ -28,3 +29,22 @@ class Logger:
             )
 
         return json.loads(data)
+
+    @classmethod
+    def caller_info(cls):
+        stack = inspect.stack()
+
+        caller_frame = stack[2]
+
+        function_name = caller_frame.function
+
+        module_name = caller_frame.frame.f_globals["__name__"]
+
+        instance = caller_frame.frame.f_locals.get("self", None)
+
+        if instance:
+            class_name = instance.__class__.__name__
+        else:
+            class_name = None
+
+        print(f"Called from: {module_name}.{class_name}.{function_name}")
