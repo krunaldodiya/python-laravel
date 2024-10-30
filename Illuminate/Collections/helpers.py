@@ -1,7 +1,12 @@
-from typing import Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, List, TypeVar, Union
+
+if TYPE_CHECKING:
+    from Illuminate.Collections.Collection import Collection
+
+T = TypeVar("T")
 
 
-def collect(items: Dict[Any, Any] = {}, *args, **kwargs):
+def collect(items: T = {}, *args, **kwargs) -> "Collection[T]":
     from Illuminate.Collections.Collection import Collection
 
     return Collection(items, *args, **kwargs)

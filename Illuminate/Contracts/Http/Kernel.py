@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Any
 
 from Illuminate.Contracts.Http.Request import Request
+from Illuminate.Contracts.Http.Response import Response
 
 
 class Kernel(ABC):
@@ -29,7 +31,7 @@ class Kernel(ABC):
         pass
 
     @abstractmethod
-    def terminate(self, request: Request):
+    def terminate(self, request: Request, response: Response):
         """Handles the incoming request."""
         pass
 

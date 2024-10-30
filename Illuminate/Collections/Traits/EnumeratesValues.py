@@ -1,16 +1,14 @@
-from typing import Any, Callable, Dict, List, Self, Tuple
+from typing import Any, Callable, List, Self
 from Illuminate.Collections.Enumerable import Enumerable
 from Illuminate.Collections.helpers import data_get
 
+from Illuminate.Conditionable.Conditionable import Conditionable
 from Illuminate.Helpers.Util import Util
 from Illuminate.Http.ResponseFactory import ResponseFactory
 from Illuminate.Support.helpers import safe_eval_compare
 
 
-class EnumeratesValues(Enumerable):
-    def __init__(self, items: Dict[Any, Any] = {}, *args, **kwargs) -> None:
-        self._items = items
-
+class EnumeratesValues(Conditionable, Enumerable):
     def __getitem__(self, index):
         return self._items[index]
 
@@ -35,6 +33,9 @@ class EnumeratesValues(Enumerable):
     def to_list(self) -> List[Any]:
         return list(self._items.values())
 
+    def map_into(self, class_name) -> Self:
+        return self.map(lambda value, key: class_name(value, key))
+
     def reject(self, callback=True) -> Self:
         return self.filter(
             lambda value, key: (
@@ -55,7 +56,7 @@ class EnumeratesValues(Enumerable):
 
         return self
 
-    def every(self, data_key, data_operator=None, data_value=None) -> Self:
+    def every(self, data_key, data_operator=None, data_value=None) -> bool:
         if not data_operator and not data_value:
             self._check_is_callable(data_key)
 
@@ -75,9 +76,7 @@ class EnumeratesValues(Enumerable):
             )
         )
 
-    def partition(
-        self, data_key, data_operator=None, data_value=None
-    ) -> Tuple[Self, Self]:
+    def partition(self, data_key, data_operator=None, data_value=None):
         passed = {}
         failed = {}
 

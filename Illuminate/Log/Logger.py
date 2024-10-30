@@ -40,11 +40,9 @@ class Logger:
 
         module_name = caller_frame.frame.f_globals["__name__"]
 
-        instance = caller_frame.frame.f_locals.get("self", None)
+        instance_method = caller_frame.frame.f_locals.get("self", None)
 
-        if instance:
-            class_name = instance.__class__.__name__
+        if instance_method:
+            return f"{module_name}.{instance_method.__class__.__name__}.{function_name}"
         else:
-            class_name = None
-
-        print(f"Called from: {module_name}.{class_name}.{function_name}")
+            return f"{module_name}.{function_name}"

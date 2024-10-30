@@ -190,7 +190,7 @@ class Router:
             self._run_route_within_stack(route, request),
         )
 
-    def _run_route_within_stack(self, route, request):
+    def _run_route_within_stack(self, route: Route, request: Request):
         middleware = self.gather_route_middleware(route)
 
         output = (
@@ -207,6 +207,9 @@ class Router:
         return response
 
     def prepare_response(self, request: Request, response: Any):
+        if not isinstance(request, Request):
+            response = request
+
         self.events.dispatch(PreparingResponse(request, response))
 
         return tap(

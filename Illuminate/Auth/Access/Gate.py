@@ -1,6 +1,9 @@
 from typing import Any, Callable, List
 from Illuminate.Collections.helpers import collect
 from Illuminate.Contracts.Auth.Access.Gate import Gate as GateContract
+from Illuminate.Exceptions.UnauthorizedAccessException import (
+    UnauthorizedAccessException,
+)
 
 
 class Gate(GateContract):
@@ -36,20 +39,52 @@ class Gate(GateContract):
         if callable(callback):
             self.abilities[ability] = callback
 
-    def check(self, ability: str, arguments: List[Any] = []) -> bool:
-        abilities = [ability] if isinstance(ability, str) else ability
-
+    def check(self, abilities: list, arguments: List[Any] = []) -> bool:
         return collect(abilities).every(
             lambda ability: self.inspect(ability, arguments)
         )
 
-    def inspect(self, ability: str, arguments: List[Any] = []) -> bool:
-        abilities = [ability] if isinstance(ability, str) else ability
+    def authorize(self, ability: str, arguments: List[Any] = []):
+        assert isinstance(ability, str)
 
-        return all(
-            self.abilities.get(ability, lambda *args: False)(*arguments)
-            for ability in abilities
-        )
+        allowed = self.inspect(ability, arguments)
+
+        if not allowed:
+            raise UnauthorizedAccessException("Unauthorized")
+
+    def inspect(self, ability: str | list, arguments: List[Any] = []) -> bool:
+        results = self.raw(ability, arguments)
+
+        return results
+
+    def raw(self, ability: str, arguments: List[Any] = []) -> bool:
+        arguments = arguments if isinstance(arguments, list) else [arguments]
+
+        user = self.resolve_user()
+
+        auth_callback = self.get_auth_callback(ability, arguments)
+
+        if not auth_callback:
+            return True
+
+        return auth_callback(user, *arguments)
+
+    def get_auth_callback(self, ability: str | list, arguments: List[Any] = []):
+        auth_callback = None
+
+        if len(arguments):
+            policy = self.get_policy_for(arguments[0])
+
+            if policy and hasattr(policy, ability):
+                auth_callback = getattr(policy, ability)
+
+        if not auth_callback:
+            ability_callback = self.abilities.get(ability)
+
+            if ability_callback:
+                auth_callback = ability_callback
+
+        return auth_callback
 
     def has(self, abilities: List[str]) -> bool:
         return all(self.abilities.get(ability, None) for ability in abilities)
@@ -69,7 +104,7 @@ class Gate(GateContract):
             self.policies[model_class] = policy
 
     def __get_model_class(self, instance_or_class):
-        if not isinstance(
+        if isinstance(
             instance_or_class, (str, bool, int, float, list, dict, tuple, set)
         ):
             return None
@@ -87,12 +122,6 @@ class Gate(GateContract):
             before_callbacks=self.before_callbacks,
             after_callbacks=self.after_callbacks,
         )
-
-    def authorize(self, ability, arguments):
-        allowed = self.inspect(ability, arguments)
-
-        if not allowed:
-            raise Exception("Unauthorized")
 
     def resolve_user(self):
         return self.user_resolver()

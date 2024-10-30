@@ -1,11 +1,12 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from typing import Any, Type
 from pathlib import Path
 
+from Illuminate.Contracts.Container.Container import Container
 from Illuminate.Contracts.Http.Request import Request
 
 
-class Application(ABC):
+class Application(Container):
     @property
     @abstractmethod
     def service_providers(self):

@@ -131,7 +131,7 @@ class Kernel:
         except Exception as e:
             raise e
 
-    def terminate(self):
+    def terminate(self, request: Request, response: Response):
         self.__app.forget_binding("request")
 
     def push_middleware(self, middleware):

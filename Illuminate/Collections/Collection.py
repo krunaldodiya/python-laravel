@@ -10,25 +10,41 @@ from Illuminate.Contracts.Collections.Collection import Collection as Collection
 T = TypeVar("T")
 
 
-class Collection(EnumeratesValues, CollectionContract, Generic[T]):
-    def __init__(self, items: Dict[Any, Any] = {}, *args, **kwargs) -> None:
-        super().__init__({})
-
+class Collection(EnumeratesValues, Generic[T], CollectionContract):
+    def __init__(self, items={}, *args, **kwargs) -> None:
         self._items = self._get_iterable_items(items)
 
-    def all(self) -> Dict[Any, Any]:
+    def all(self):
         return [(key, item) for key, item in self._items.items()]
 
     def count(self) -> int:
         return len(self._items)
 
-    def to_base(self) -> Self:
+    def is_empty(self) -> bool:
+        return len(self._items) == 0
+
+    def is_not_empty(self) -> bool:
+        return not self.is_empty()
+
+    def to_base(self) -> "Collection":
         return Collection(self._items)
 
     def values(self) -> Self:
         return self.__class__(self.to_list())
 
-    def filter(self, callback: Optional[Callable[[Any], Any]] = None) -> Self:
+    def tap(self, callback: Callable[..., Any]) -> Self:
+        callback(self)
+
+        return self
+
+    def prepend(self, value, key=None) -> Self:
+        key = key if key else self._get_key()
+
+        self._items = {key: value, **self._items}
+
+        return self
+
+    def filter(self, callback: Optional[Callable[..., Any]] = None) -> Self:
         if not callback:
             return self.__class__({key: value for key, value in self if value})
 
@@ -42,13 +58,26 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
 
         return self.__class__(results)
 
-    def map(self, callback: Callable[[Any], Any]) -> Self:
+    def map(self, callback: Callable[..., Any]) -> Self:
         self._check_is_callable(callback)
 
         results = {
             key: Util.callback_with_dynamic_args(callback, [value, key])
             for key, value in self
         }
+
+        return self.__class__(results)
+
+    def map_with_keys(self, callback: Callable[..., Any]) -> Self:
+        self._check_is_callable(callback)
+
+        results = {}
+
+        for key, value in self._items.items():
+            assoc: dict = Util.callback_with_dynamic_args(callback, [value, key])
+
+            for map_key, map_value in assoc.items():
+                results[map_key] = map_value
 
         return self.__class__(results)
 
@@ -107,39 +136,42 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
 
         return self.reject(is_unique)
 
-    def transform(self, callback: Callable[[Any], Any]) -> Self:
+    def transform(self, callback: Callable[..., Any]) -> Self:
         self._items = self.map(callback)._items
 
         return self
 
-    def concat(self, items: Union[List, Dict] = []) -> Self:
-        if isinstance(items, list):
-            iterator = enumerate(items)
-        elif isinstance(items, dict):
-            iterator = items.items()
-        elif isinstance(items, Collection):
-            iterator = items
+    def concat(self, data: Union[List[Any], Dict[Any, Any], "Collection"] = []) -> Self:
+        if isinstance(data, list):
+            iterator = enumerate(data)
+        elif isinstance(data, dict):
+            iterator = data.items()
+        elif isinstance(data, Collection):
+            iterator = data.all()
         else:
             raise Exception(
-                "Invalid items iterator, must be list, dict or Collection object."
+                "Invalid items iterator, must be list, dict, or Collection object."
             )
 
         results = self.__class__(self._items)
+
+        if not data:
+            return results
 
         for key, item in iterator:
             results.push(item)
 
         return results
 
-    def flatten(self, depth: int = math.inf) -> Self:
+    def flatten(self, depth=math.inf) -> Self:
         flattened_items = Arr.flatten(self, depth)
 
         return self.__class__(flattened_items)
 
-    def group_by(self, callback_or_string: Union[Callable[[Any], Any], str]):
+    def group_by(self, callback_or_string: Union[Callable[..., Any], str]):
         group_callback = self._value_retriever(callback_or_string)
 
-        results: Dict[Any, Self] = {}
+        results: Dict[Any, Collection] = {}
 
         for key, value in self:
             group_keys = Util.callback_with_dynamic_args(group_callback, [value, key])
@@ -157,13 +189,13 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
 
     def sort_by(
         self,
-        callback_or_string: Union[Callable[[Any], Any], str],
+        callback_or_string: Union[Callable[..., Any], str],
         descending: bool = False,
     ) -> Self:
         sort_callback = self._value_retriever(callback_or_string)
 
         sorted_items = self._sort_items(
-            self,
+            self.all(),
             key=lambda item: Util.callback_with_dynamic_args(
                 sort_callback, [item[1], item[0]]
             ),
@@ -174,7 +206,7 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
 
     def sort(
         self,
-        sort_callback: Optional[Callable[[Any], Any]] = None,
+        sort_callback: Optional[Callable[..., Any]] = None,
         descending: bool = False,
     ) -> Self:
         if sort_callback:
@@ -183,14 +215,14 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
             return self.sort_by(sort_callback, descending)
 
         sorted_items = self._sort_items(
-            self._items.items(), key=lambda item: str(item[1]), descending=descending
+            self.all(), key=lambda item: str(item[1]), descending=descending
         )
 
         return self.__class__(sorted_items)
 
     def sort_keys(self, descending: bool = False) -> Self:
         sorted_items = self._sort_items(
-            self._items.items(), key=lambda item: str(item[0]), descending=descending
+            self.all(), key=lambda item: str(item[0]), descending=descending
         )
 
         return self.__class__(sorted_items)
@@ -203,7 +235,7 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
     ) -> Dict[Any, Any]:
         return dict(sorted(items, key=key, reverse=descending))
 
-    def _get_iterable_items(self, data: Any) -> Dict[Tuple, Any]:
+    def _get_iterable_items(self, data: Any) -> Dict[Any, Any]:
         try:
             if isinstance(data, Collection):
                 return data._items
@@ -220,4 +252,4 @@ class Collection(EnumeratesValues, CollectionContract, Generic[T]):
             else:
                 return {0: data}
         except Exception as e:
-            print("Collection._get_iterable_items", e)
+            raise Exception("Invalid Items passed to collection")
