@@ -23,9 +23,11 @@ from Illuminate.Routing.Router import Router
 from Illuminate.Contracts.Routing.Router import Router as RouterContract
 
 from Illuminate.Support.Facades.Config import Config
+from Illuminate.Validation.Factory import Factory as ValidationFactory
+from Illuminate.Validation.ValidationServiceProvider import ValidationServiceProvider
 
 
-class Application(Container):
+class Application(Container, ApplicationContract):
     def __init__(self, base_path: str = None) -> None:
         super().__init__()
 
@@ -60,6 +62,7 @@ class Application(Container):
             "response": [ResponseFactory],
             "router": [Router, RouterContract],
             "event": [Dispatcher],
+            "validator": [ValidationFactory],
         }
 
         if base_path:
@@ -263,6 +266,7 @@ class Application(Container):
         self.register(EventServiceProvider)
         self.register(LogServiceProvider)
         self.register(RoutingServiceProvider)
+        self.register(ValidationServiceProvider)
 
     def register_configured_providers(self) -> Any:
         providers = Config.get("app.providers")
@@ -291,20 +295,18 @@ class Application(Container):
             callback(self)
 
     def register(self, provider_class: Type[ServiceProviderContract]):
-        base_key = self.get_base_key(provider_class)
-
-        registered = self.get_provider(base_key)
+        registered = self.get_provider(provider_class)
 
         if registered:
             return registered
 
         provider = provider_class(self)
 
-        self.__service_providers[base_key] = provider
+        self.__service_providers[provider_class] = provider
 
         provider.register()
 
-        self.__mark_as_registered(base_key)
+        self.__mark_as_registered(provider_class)
 
         if self.is_booted():
             self.boot_provider(provider)
@@ -332,21 +334,12 @@ class Application(Container):
         self.__loaded_providers[base_key] = True
 
     def register_container_aliases(self):
-        for abstract_alias, aliases in self.__container_aliases.items():
+        for key, aliases in self.__container_aliases.items():
             for alias in aliases:
-                self.alias(abstract_alias, alias)
+                self.alias(key, alias)
 
     def get_provider(self, base_key):
         return self.__service_providers.get(base_key)
-
-    def bind(self, *args, **kwargs) -> None:
-        return super().bind(*args, **kwargs)
-
-    def singleton(self, *args, **kwargs) -> None:
-        return super().singleton(*args, **kwargs)
-
-    def make(self, *args, **kwargs) -> Any:
-        return super().make(*args, **kwargs)
 
     def provider_is_loaded(self, base_key):
         return self.__loaded_providers.get(base_key)
@@ -356,13 +349,6 @@ class Application(Container):
 
     def running_in_console(self):
         return self.__running_in_console
-
-    def after_resolving(self, abstract, callback):
-        self.make(abstract)
-
-        request = self.make("request")
-
-        callback(request, self)
 
     def bound(self, abstract):
         return self.get_instance(abstract) is not None

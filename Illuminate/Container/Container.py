@@ -1,7 +1,6 @@
 import inspect
 
-from abc import ABC, abstractmethod
-from importlib import import_module
+from abc import ABC
 from typing import Any, Dict, Callable, Optional
 from inspect import signature, getfullargspec
 
@@ -29,64 +28,164 @@ class Container(ABC):
         self.__resolved: Dict[str, bool] = {}
         self.__aliases: Dict[str, str] = {}
         self.__abstract_aliases: Dict[str, list] = {}
+        self._global_before_resolving_callbacks: list = []
+        self._before_resolving_callbacks: dict = {}
+        self._global_resolving_callbacks: list = []
+        self._resolving_callbacks: dict = {}
+        self._global_after_resolving_callbacks: list = []
+        self._after_resolving_callbacks: dict = {}
 
-    @abstractmethod
     def bind(self, key: str, binding_resolver: Callable) -> None:
         self.__bind(key, binding_resolver, False)
 
-    @abstractmethod
     def singleton(self, key: str, binding_resolver: Callable) -> None:
         self.__bind(key, binding_resolver, True)
 
-    @abstractmethod
-    def make(self, key: str, make_args: Optional[Dict[str, Any]] = None) -> Any:
-        make_args = make_args or {}
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def make(self, key: str, parameters: Optional[Dict[str, Any]] = None) -> Any:
+        return self.resolve(key, parameters)
 
-        return self.__make(abstract, make_args)
+    def resolve(self, abstract: str, parameters: Optional[Dict[str, Any]] = None):
+        parameters = parameters or {}
 
-    def __make(self, abstract: str, make_args: Dict[str, Any] = {}) -> Any:
-        instance = self.__resolve_binding_if_exists(abstract, make_args)
+        abstract = self.get_alias(abstract)
 
-        if instance:
-            return instance
+        self._fire_before_resolving_callbacks(abstract, parameters)
+
+        concrete = self._get_contextual_concrete(abstract, parameters)
+
+        needs_contextual_builds = parameters or concrete
 
         instance = self.get_instance(abstract)
 
-        if instance and not make_args:
+        if instance and not needs_contextual_builds:
             return instance
 
-        return self.__resolve_class_if_exists(abstract, make_args)
+        if not concrete:
+            concrete = self._get_concrete(abstract, parameters)
+
+        self._fire_resolving_callbacks(abstract, concrete)
+
+        return concrete
+
+    def _get_contextual_concrete(self, abstract, parameters):
+        binding = self._find_in_contextual_bindings(abstract, parameters)
+
+        if binding:
+            return binding
+
+        abstract_aliases = self.__abstract_aliases.get(abstract)
+
+        if not abstract_aliases:
+            return None
+
+        for alias in abstract_aliases:
+            binding = self._find_in_contextual_bindings(alias, parameters)
+
+            if binding:
+                return binding
+
+    def _fire_before_resolving_callbacks(self, abstract, parameters):
+        self._fire_before_callback_array(
+            abstract, parameters, self._global_before_resolving_callbacks
+        )
+
+        for type, callbacks in self._before_resolving_callbacks.items():
+            if type == abstract or isinstance(type, abstract):
+                self._fire_before_callback_array(abstract, parameters, callbacks)
+
+    def _fire_before_callback_array(self, abstract, parameters, callbacks):
+        for callback in callbacks:
+            callback(abstract, parameters, self)
+
+    def _fire_resolving_callbacks(self, abstract, concrete):
+        self._fire_callback_array(concrete, self._global_resolving_callbacks)
+
+        self._fire_callback_array(
+            concrete,
+            self._get_callbacks_for_type(abstract, concrete, self._resolving_callbacks),
+        )
+
+        self._fire_after_resolving_callbacks(abstract, concrete)
+
+    def _fire_after_resolving_callbacks(self, abstract, concrete):
+        self._fire_callback_array(concrete, self._global_after_resolving_callbacks)
+
+        self._fire_callback_array(
+            concrete,
+            self._get_callbacks_for_type(
+                abstract, concrete, self._after_resolving_callbacks
+            ),
+        )
+
+    def _get_callbacks_for_type(self, abstract, concrete, callbacks_per_type):
+        results = []
+
+        for type, callbacks in callbacks_per_type.items():
+            if type == abstract or isinstance(concrete, type):
+                results.extend(callbacks)
+
+        return results
+
+    def _fire_callback_array(self, concrete, callbacks):
+        for callback in callbacks:
+            callback(concrete, self)
+
+    def before_resolving(self, abstract, callback=None):
+        if isinstance(abstract, str):
+            abstract = self.get_alias(abstract)
+
+        if callable(abstract) and not callback:
+            self._global_before_resolving_callbacks.append(abstract)
+        else:
+            self._before_resolving_callbacks.setdefault(abstract, []).append(callback)
+
+    def resolving(self, abstract, callback=None):
+        if isinstance(abstract, str):
+            abstract = self.get_alias(abstract)
+
+        if callable(abstract) and not callback:
+            self._global_resolving_callbacks.append(abstract)
+        else:
+            self._resolving_callbacks.setdefault(abstract, []).append(callback)
+
+    def after_resolving(self, abstract, callback=None):
+        if isinstance(abstract, str):
+            abstract = self.get_alias(abstract)
+
+        if callable(abstract) and not callback:
+            self._global_after_resolving_callbacks.append(abstract)
+        else:
+            self._after_resolving_callbacks.setdefault(abstract, []).append(callback)
 
     def bind_if(self, key: str, binding_resolver: Callable) -> None:
         if not self.bound(key):
             self.__bind(key, binding_resolver, False)
 
-    def bound(self, key: str) -> Optional[Any]:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def bound(self, abstract: str) -> Optional[Any]:
+        abstract = self.get_alias(abstract)
 
         binding = self.__bindings.get(abstract)
         instance = self.__instances.get(abstract)
 
         return instance if binding and instance else None
 
-    def instance(self, key: str, instance: Any) -> Any:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def instance(self, abstract: str, instance: Any) -> Any:
+        abstract = self.get_alias(abstract)
         return self.__make_instance(abstract, instance)
 
-    def alias(self, abstract_alias: str, alias: str) -> None:
-        if abstract_alias == alias:
-            raise Exception(f"{abstract_alias} cannot alias itself")
+    def alias(self, abstract: str, alias: str) -> None:
+        if abstract == alias:
+            raise Exception(f"{abstract} cannot alias itself")
 
-        base_key = self.get_base_key(alias)
-        self.__aliases[base_key] = abstract_alias
-        self.__abstract_aliases.setdefault(abstract_alias, []).append(base_key)
+        self.__aliases[alias] = abstract
+        self.__abstract_aliases.setdefault(abstract, []).append(alias)
 
-    def get_alias(self, abstract: str) -> str:
-        return self.__aliases.get(abstract, abstract)
+    def get_alias(self, abstract: Any) -> Any:
+        return (
+            self.get_alias(self.__aliases.get(abstract))
+            if abstract in self.__aliases
+            else abstract
+        )
 
     def get_aliases(self) -> Dict[str, str]:
         return self.__aliases
@@ -106,16 +205,8 @@ class Container(ABC):
     def get_resolved(self) -> Dict[str, bool]:
         return self.__resolved
 
-    def get_base_key(self, key: Any) -> str:
-        if isinstance(key, str):
-            return key
-        if callable(key):
-            return f"{key.__module__}.{key.__name__}"
-        raise Exception("Invalid key type")
-
-    def __bind(self, key: str, binding_resolver: Callable, shared: bool) -> None:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def __bind(self, abstract: str, binding_resolver: Callable, shared: bool) -> None:
+        abstract = self.get_alias(abstract)
 
         self.__bindings[abstract] = {
             "abstract": abstract,
@@ -127,8 +218,8 @@ class Container(ABC):
         self.__instances[abstract] = instance
         return instance
 
-    def __resolve_binding_if_exists(
-        self, abstract: str, make_args: Dict[str, Any] = {}
+    def _find_in_contextual_bindings(
+        self, abstract: str, parameters: Dict[str, Any] = {}
     ) -> Optional[Any]:
         binding = self.__bindings.get(abstract)
 
@@ -141,40 +232,24 @@ class Container(ABC):
         if shared and (abstract in self.__instances):
             return self.__instances[abstract]
 
-        instance = self.__resolve(abstract, binding_resolver, make_args)
+        instance = self.__resolve(abstract, binding_resolver, parameters)
 
         if shared:
             self.__instances[abstract] = instance
 
         return instance
 
-    def __check_if_module_exists(self, abstract: str) -> tuple:
-        splitted = abstract.rsplit(".", 1)
-
-        if len(splitted) < 2:
-            raise Exception(f"Class {abstract} not found")
-
-        return splitted[0], splitted[1]
-
-    def __resolve_class_if_exists(
-        self, abstract: str, make_args: Dict[str, Any] = {}
-    ) -> Any:
+    def _get_concrete(self, abstract: str, parameters: Dict[str, Any] = {}) -> Any:
         try:
-            module_path, class_name = self.__check_if_module_exists(abstract)
-
-            module = import_module(module_path)
-
-            binding_resolver = getattr(module, class_name)
-
-            return self.__resolve(abstract, binding_resolver, make_args)
+            return self.__resolve(abstract, abstract, parameters)
         except Exception as e:
             raise BindingResolutionException(f"Error resolving class: {str(e)}")
 
     def __resolve(
         self,
         abstract: str,
-        binding_resolver: Callable,
-        make_args: Dict[str, Any],
+        binding_resolver: Any,
+        parameters: Dict[str, Any],
     ) -> Any:
         instance = None
 
@@ -182,7 +257,7 @@ class Container(ABC):
             total_params = len(signature(binding_resolver).parameters)
 
             if total_params >= 2:
-                instance = binding_resolver(self, make_args)
+                instance = binding_resolver(self, parameters)
             elif total_params == 1:
                 instance = binding_resolver(self)
             else:
@@ -190,7 +265,7 @@ class Container(ABC):
 
         if inspect.isclass(binding_resolver):
             dependencies = (
-                make_args if make_args else self.get_dependencies(binding_resolver)
+                parameters if parameters else self.get_dependencies(binding_resolver)
             )
 
             instance = binding_resolver(**dependencies)
@@ -221,82 +296,19 @@ class Container(ABC):
     def clear_resolved(self) -> None:
         self.__resolved.clear()
 
-    def __bind(self, key: str, binding_resolver: Any, shared: bool) -> None:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
-
-        self.__bindings[abstract] = {
-            "abstract": abstract,
-            "binding_resolver": binding_resolver,
-            "shared": shared,
-        }
-
-    def instance(self, key: str, instance: Any) -> Any:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
-
-        return self.__make_instance(abstract, instance)
-
-    def __make_instance(self, abstract: str, instance: Any) -> Any:
-        self.__instances[abstract] = instance
-        return instance
-
-    def alias(self, abstract_alias: str, alias: str) -> None:
-        if abstract_alias == alias:
-            raise Exception(f"{abstract_alias} is aliased to itself")
-
-        base_key = self.get_base_key(alias)
-
-        self.__aliases[base_key] = abstract_alias
-        self.__abstract_aliases.setdefault(abstract_alias, []).append(base_key)
-
-    def get_alias(self, abstract: str) -> str:
-        try:
-            alias = self.__aliases[abstract]
-            return self.get_alias(alias)
-        except KeyError:
-            return abstract
-
-    def get_bindings(self) -> Dict[str, Any]:
-        return self.__bindings
-
-    def get_instances(self) -> Dict[str, Any]:
-        return self.__instances
-
-    def get_resolved(self) -> Dict[str, bool]:
-        return self.__resolved
-
-    def get_aliases(self) -> Dict[str, str]:
-        return self.__aliases
-
-    def get_abstract_aliases(self) -> Dict[str, Any]:
-        return self.__abstract_aliases
-
-    def bound(self, key: str) -> bool:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
-
-        binding = self.__bindings.get(abstract)
-        instance = self.__instances.get(abstract)
-
-        return binding is not None and instance is not None
-
-    def has(self, key: str) -> bool:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def has(self, abstract: str) -> bool:
+        abstract = self.get_alias(abstract)
 
         return abstract in self.__bindings
 
-    def forget_instance(self, key: str) -> None:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def forget_instance(self, abstract: str) -> None:
+        abstract = self.get_alias(abstract)
 
         if abstract in self.__instances:
             del self.__instances[abstract]
 
-    def forget_binding(self, key: str) -> None:
-        base_key = self.get_base_key(key)
-        abstract = self.get_alias(base_key)
+    def forget_binding(self, abstract: str) -> None:
+        abstract = self.get_alias(abstract)
 
         if abstract in self.__bindings:
             del self.__bindings[abstract]

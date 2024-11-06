@@ -2,6 +2,7 @@ from typing import Self
 from Illuminate.Contracts.Foundation.Application import Application
 from Illuminate.Http.ServerBag.WSGIServer import WSGIServer
 from Illuminate.Http.RequestAdapter import RequestAdapter
+from Illuminate.Http.WSGIRequestAdapter import WSGIRequestAdapter
 from Illuminate.Routing.Route import Route
 
 
@@ -17,8 +18,8 @@ class Request:
 
         self.__dict__.update(self.request.__dict__)
 
-    def __getattr__(cls, attribute, *args, **kwargs):
-        return getattr(cls.request, attribute)
+    def __getattr__(self, attribute, *args, **kwargs):
+        return getattr(self.request, attribute)
 
     def __getitem__(self, key):
         return self.request[key]
@@ -31,7 +32,9 @@ class Request:
     def create_from_base(cls, app):
         server = WSGIServer.get_server()
 
-        return cls.create_from(app, server)
+        request_adapter = WSGIRequestAdapter(server)
+
+        return cls.create_from(app, request_adapter)
 
     @classmethod
     def create_from(cls, app: Application, request_adapter: RequestAdapter):
@@ -67,6 +70,9 @@ class Request:
 
     def get_full_url(self):
         return self.request_adapter.get_full_url()
+
+    def input(self):
+        return self.request_adapter.post_data()
 
     def set_route_resolver(self, route_resolver) -> Self:
         self.route_resolver = route_resolver

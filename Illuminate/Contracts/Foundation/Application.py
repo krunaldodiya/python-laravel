@@ -90,16 +90,6 @@ class Application(Container):
         pass
 
     @abstractmethod
-    def set_request_handler(self, request_handler: Any) -> Any:
-        """Sets the request handler for handling HTTP requests."""
-        pass
-
-    @abstractmethod
-    def handle_request(self, request: Request) -> Any:
-        """Handles the incoming HTTP request."""
-        pass
-
-    @abstractmethod
     def get_provider(self, base_key: str):
         """Gets the service provider by base key."""
         pass

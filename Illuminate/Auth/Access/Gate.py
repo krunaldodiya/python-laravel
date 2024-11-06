@@ -4,6 +4,7 @@ from Illuminate.Contracts.Auth.Access.Gate import Gate as GateContract
 from Illuminate.Exceptions.UnauthorizedAccessException import (
     UnauthorizedAccessException,
 )
+from Illuminate.Helpers.Util import Util
 
 
 class Gate(GateContract):
@@ -67,16 +68,16 @@ class Gate(GateContract):
         if not auth_callback:
             return True
 
-        return auth_callback(user, *arguments)
+        return Util.callback_with_dynamic_args(auth_callback, [user, *arguments])
 
     def get_auth_callback(self, ability: str | list, arguments: List[Any] = []):
         auth_callback = None
 
         if len(arguments):
-            policy = self.get_policy_for(arguments[0])
+            policy_class = self.get_policy_for(arguments[0])
 
-            if policy and hasattr(policy, ability):
-                auth_callback = getattr(policy, ability)
+            if policy_class and hasattr(policy_class, ability):
+                auth_callback = getattr(policy_class(), ability)
 
         if not auth_callback:
             ability_callback = self.abilities.get(ability)
