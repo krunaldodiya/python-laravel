@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Optional
 
 from Illuminate.Contracts.Foundation.Application import Application
+from Illuminate.Foundation.Http.Events.RequestHandled import RequestHandled
+from Illuminate.Support.Facades.App import App
 from Illuminate.Contracts.Http.Request import Request
 from Illuminate.Contracts.Http.Response import Response
 from Illuminate.Contracts.Routing.Router import Router as RouterContract
@@ -20,10 +23,10 @@ from Illuminate.Pipeline.Pipeline import Pipeline
 
 
 class Kernel:
-    __middleware = []
-    __middleware_groups = {}
-    __middleware_aliases = {}
-    __route_middleware = {}
+    __middleware: list = []
+    __middleware_groups: dict = {}
+    __middleware_aliases: dict = {}
+    __route_middleware: dict = {}
 
     def __init__(self, app: Application, router: RouterContract) -> None:
         self.__app = app
@@ -46,7 +49,7 @@ class Kernel:
             HandlePrecognitiveRequests,
         ]
 
-        self.request_started_at = None
+        self.request_started_at: Optional[datetime] = None
 
         self.__sync_middleware_to_router()
 
@@ -98,8 +101,12 @@ class Kernel:
 
             response = self.send_through_router(request)
 
+            App.make("events").dispatch(RequestHandled(request, response))
+
             return response
         except Exception as e:
+            App.make("events").dispatch(RequestHandled(request, Response()))
+
             raise e
 
     def send_through_router(self, request: Request):

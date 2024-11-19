@@ -40,7 +40,11 @@ class Validator:
 
                     if validatable:
                         should_process_next = self.__process_validation(
-                            rule_item, rule_executor, self.messages, self.data
+                            field,
+                            rule_item,
+                            rule_executor,
+                            self.messages,
+                            self.data,
                         )
 
                         if not should_process_next:
@@ -52,6 +56,7 @@ class Validator:
 
     def __process_validation(
         self,
+        field: str,
         rule_item: str,
         rule_executor: Rule,
         messages: Dict[str, Any],

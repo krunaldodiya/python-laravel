@@ -1,9 +1,16 @@
 from typing import TYPE_CHECKING, Any, List, TypeVar, Union
 
+from Illuminate.Helpers.Util import Util
+from Illuminate.Support.Facades.App import App
+
 if TYPE_CHECKING:
     from Illuminate.Collections.Collection import Collection
 
 T = TypeVar("T")
+
+
+def event(*args, **kwargs):
+    return App.make("events").dispatch(*args, **kwargs)
 
 
 def collect(items: T = {}, *args, **kwargs) -> "Collection[T]":
@@ -13,7 +20,11 @@ def collect(items: T = {}, *args, **kwargs) -> "Collection[T]":
 
 
 def value(target, *args, **kwargs):
-    return target(*args, **kwargs) if callable(target) else target
+    return (
+        Util.callback_with_dynamic_args(target, list(args), dict(kwargs))
+        if callable(target)
+        else target
+    )
 
 
 def data_get(target: Any, key: Union[List[str], str] = None, default=None):

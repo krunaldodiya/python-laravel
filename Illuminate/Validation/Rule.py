@@ -2,6 +2,7 @@ import abc
 
 from typing import Any, Dict, List, Literal, TYPE_CHECKING, Tuple, Union
 
+from Illuminate.Collections.helpers import collect
 from Illuminate.Validation.helpers import pascal_to_snake
 
 if TYPE_CHECKING:
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 
 class Rule(abc.ABC):
     def __init__(self, *args, **kwargs) -> None:
-        self.__args = args
+        self.__args = collect(args)
         self.__kwargs = kwargs
 
         self.__params: dict = {}

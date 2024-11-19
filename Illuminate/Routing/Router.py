@@ -253,7 +253,7 @@ class Router:
         return priorities + non_priorities
 
     def _find_route(self, request: Request):
-        self.events.dispatch(Routing())
+        self.events.dispatch(Routing(request))
 
         route = self._route_collection.match(request)
 

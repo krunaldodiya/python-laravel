@@ -13,7 +13,7 @@ from Illuminate.Routing.UrlGenerator import UrlGenerator
 from Illuminate.Support.ServiceProvider import ServiceProvider
 from Illuminate.Routing.Router import Router
 from Illuminate.Http.Request import Request
-from Illuminate.Http.ResponseFactory import ResponseFactory
+from Illuminate.Routing.ResponseFactory import ResponseFactory
 
 
 class RoutingServiceProvider(ServiceProvider):
@@ -35,7 +35,7 @@ class RoutingServiceProvider(ServiceProvider):
 
     def _register_router(self):
         def lambda_function(app: Application):
-            return Router(app, app.make("event"))
+            return Router(app, app.make("events"))
 
         self.__app.singleton("router", lambda_function)
 

@@ -7,118 +7,107 @@ from Illuminate.Validation.helpers import snake_to_pascal
 
 
 class RulesMapper:
-    __instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if cls.__instance is None:
-            cls.__instance = super(RulesMapper, cls).__new__(cls, *args, **kwargs)
-
-        return cls.__instance
-
     def __init__(self) -> None:
-        if hasattr(self, "_initialized"):
-            return
-        else:
-            self.__rule_executor_types: Dict[str, Type[Rule]] = (
-                self.__get_rule_executor_types()
-            )
+        self.__rule_executor_types: Dict[str, Type[Rule]] = (
+            self.__get_rule_executor_types()
+        )
 
-            self.__rules: dict[str, Dict[str, Rule]] = {}
+        self.__rules: dict[str, Dict[str, Rule]] = {}
 
-            self.__implicit_rules = [
-                "accepted",
-                "accepted_if",
-                "declined",
-                "declined_if",
-                "filled",
-                "missing",
-                "missing_if",
-                "missing_unless",
-                "missing_with",
-                "missing_with_all",
-                "present",
-                "present_if",
-                "present_unless",
-                "present_with",
-                "present_with_all",
-                "required",
-                "required_if",
-                "required_if_accepted",
-                "required_if_declined",
-                "required_unless",
-                "required_with",
-                "required_with_all",
-                "required_without",
-                "required_without_all",
-            ]
+        self.__implicit_rules = [
+            "accepted",
+            "accepted_if",
+            "declined",
+            "declined_if",
+            "filled",
+            "missing",
+            "missing_if",
+            "missing_unless",
+            "missing_with",
+            "missing_with_all",
+            "present",
+            "present_if",
+            "present_unless",
+            "present_with",
+            "present_with_all",
+            "required",
+            "required_if",
+            "required_if_accepted",
+            "required_if_declined",
+            "required_unless",
+            "required_with",
+            "required_with_all",
+            "required_without",
+            "required_without_all",
+        ]
 
-            self.__dependent_rules = [
-                "after",
-                "after_or_equal",
-                "before",
-                "before_or_equal",
-                "confirmed",
-                "different",
-                "exclude_if",
-                "exclude_unless",
-                "exclude_with",
-                "exclude_without",
-                "gt",
-                "gte",
-                "lt",
-                "lte",
-                "accepted_if",
-                "declined_if",
-                "required_if",
-                "required_if_accepted",
-                "required_if_declined",
-                "required_unless",
-                "required_with",
-                "required_with_all",
-                "required_without",
-                "required_without_all",
-                "present_if",
-                "present_unless",
-                "present_with",
-                "present_with_all",
-                "prohibited",
-                "prohibited_if",
-                "prohibited_unless",
-                "prohibits",
-                "missing_if",
-                "missing_unless",
-                "missing_with",
-                "missing_with_all",
-                "same",
-                "unique",
-            ]
+        self.__dependent_rules = [
+            "after",
+            "after_or_equal",
+            "before",
+            "before_or_equal",
+            "confirmed",
+            "different",
+            "exclude_if",
+            "exclude_unless",
+            "exclude_with",
+            "exclude_without",
+            "gt",
+            "gte",
+            "lt",
+            "lte",
+            "accepted_if",
+            "declined_if",
+            "required_if",
+            "required_if_accepted",
+            "required_if_declined",
+            "required_unless",
+            "required_with",
+            "required_with_all",
+            "required_without",
+            "required_without_all",
+            "present_if",
+            "present_unless",
+            "present_with",
+            "present_with_all",
+            "prohibited",
+            "prohibited_if",
+            "prohibited_unless",
+            "prohibits",
+            "missing_if",
+            "missing_unless",
+            "missing_with",
+            "missing_with_all",
+            "same",
+            "unique",
+        ]
 
-            self.__exclude_rules = [
-                "exclude",
-                "exclude_if",
-                "exclude_unless",
-                "exclude_with",
-                "exclude_without",
-            ]
+        self.__exclude_rules = [
+            "exclude",
+            "exclude_if",
+            "exclude_unless",
+            "exclude_with",
+            "exclude_without",
+        ]
 
-            self.size_rules = [
-                "between",
-                "max",
-                "min",
-                "size",
-                "gt",
-                "lt",
-                "gte",
-                "lte",
-            ]
+        self.size_rules = [
+            "between",
+            "max",
+            "min",
+            "size",
+            "gt",
+            "lt",
+            "gte",
+            "lte",
+        ]
 
-            self.__numeric_rules = [
-                "numeric",
-                "integer",
-                "decimal",
-            ]
+        self.__numeric_rules = [
+            "numeric",
+            "integer",
+            "decimal",
+        ]
 
-            self._initialized = True
+        self._initialized = True
 
     @property
     def rule_executor_types(self):

@@ -4,6 +4,8 @@ from abc import ABC
 from typing import Any, Dict, Callable, Optional
 from inspect import signature, getfullargspec
 
+from Illuminate.Support.builtins import array_merge
+
 
 class AttributeNotFound(Exception):
     pass
@@ -90,7 +92,7 @@ class Container(ABC):
         )
 
         for type, callbacks in self._before_resolving_callbacks.items():
-            if type == abstract or isinstance(type, abstract):
+            if type == abstract or issubclass(type, abstract):
                 self._fire_before_callback_array(abstract, parameters, callbacks)
 
     def _fire_before_callback_array(self, abstract, parameters, callbacks):
@@ -122,7 +124,7 @@ class Container(ABC):
 
         for type, callbacks in callbacks_per_type.items():
             if type == abstract or isinstance(concrete, type):
-                results.extend(callbacks)
+                results = array_merge(results, callbacks)
 
         return results
 

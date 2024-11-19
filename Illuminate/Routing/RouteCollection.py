@@ -19,7 +19,7 @@ class RouteCollection:
         self.all_routes[route.uri] = route
 
     def match(self, request: Request):
-        routes = [route for route in self.routes.get(request.method, {}).values()]
+        routes = [route for route in self.routes.get(request.get_method(), {}).values()]
 
         route = self._match_against_routes(request, routes)
 
@@ -40,10 +40,12 @@ class RouteCollection:
         if route:
             return route.bind(request)
 
-        raise RouteNotFoundException(f"The route {request.path} could not be found.")
+        raise RouteNotFoundException(
+            f"The route {request.get_url()} could not be found."
+        )
 
     def __run_match(self, request: Request, route: Route):
-        request_path = request.path.strip("/")
+        request_path = request.get_url().strip("/")
 
         route_uri = route.uri.strip("/")
 

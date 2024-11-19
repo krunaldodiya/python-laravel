@@ -31,18 +31,21 @@ class Logger:
         return json.loads(data)
 
     @classmethod
-    def caller_info(cls):
-        stack = inspect.stack()
+    def caller_info(cls, stack_number=0):
+        try:
+            stack = inspect.stack()
 
-        caller_frame = stack[2]
+            caller_frame = stack[stack_number]
 
-        function_name = caller_frame.function
+            function_name = caller_frame.function
 
-        module_name = caller_frame.frame.f_globals["__name__"]
+            module_name = caller_frame.frame.f_globals["__name__"]
 
-        instance_method = caller_frame.frame.f_locals.get("self", None)
+            instance_method = caller_frame.frame.f_locals.get("self", None)
 
-        if instance_method:
-            return f"{module_name}.{instance_method.__class__.__name__}.{function_name}"
-        else:
-            return f"{module_name}.{function_name}"
+            if instance_method:
+                return f"{module_name}.{instance_method.__class__.__name__}.{function_name}"
+            else:
+                return f"{module_name}.{function_name}"
+        except Exception as e:
+            print("logger exception", e)

@@ -1,6 +1,7 @@
+import inspect
 import operator
 
-from typing import Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 from Illuminate.Support.HigherOrderTapProxy import HigherOrderTapProxy
 
 
@@ -52,3 +53,14 @@ def with_(value: T, callback: Optional[Callable[[T], R]] = None) -> T:
         return value
 
     return callback(value)
+
+
+def is_class(obj: Any):
+    return inspect.isclass(obj)
+
+
+def is_class_instance(obj: Any):
+    if is_class(obj):
+        return False
+
+    return isinstance(obj, obj.__class__)

@@ -4,7 +4,7 @@ from Illuminate.Collections.helpers import data_get
 
 from Illuminate.Conditionable.Conditionable import Conditionable
 from Illuminate.Helpers.Util import Util
-from Illuminate.Http.ResponseFactory import ResponseFactory
+from Illuminate.Routing.ResponseFactory import ResponseFactory
 from Illuminate.Support.helpers import safe_eval_compare
 
 

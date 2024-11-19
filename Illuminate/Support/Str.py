@@ -1,4 +1,6 @@
+import random
 import re
+import string
 import unicodedata
 
 from pluralizer import Pluralizer
@@ -12,6 +14,17 @@ class Str:
     _plural_cache = {}
     _singular_cache = {}
     _pluralizer = None
+
+    @classmethod
+    def random(cls, length=32) -> str:
+        return "".join(random.choices(string.ascii_letters + string.digits, k=length))
+
+    @classmethod
+    def contains(cls, haystack, needles):
+        if not haystack or not needles:
+            return False
+
+        return any(needle in haystack for needle in needles)
 
     @classmethod
     def get_pluralizer(cls):

@@ -2,7 +2,7 @@ import copy
 import inspect
 import types
 
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict, List
 
 
 class Util:
@@ -54,7 +54,9 @@ class Util:
         return len(args)
 
     @classmethod
-    def callback_with_dynamic_args(cls, callback: Callable, args: List[Any] = []):
+    def callback_with_dynamic_args(
+        cls, callback: Callable, args: List[Any] = [], kwargs: Dict[Any, Any] = {}
+    ):
         try:
             args_count = cls.get_callback_args_count(callback)
 

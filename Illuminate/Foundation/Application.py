@@ -5,7 +5,7 @@ from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Events.EventServiceProvider import EventServiceProvider
 from Illuminate.Http.Request import Request
-from Illuminate.Http.ResponseFactory import ResponseFactory
+from Illuminate.Routing.ResponseFactory import ResponseFactory
 from Illuminate.Log.LogServiceProvider import LogServiceProvider
 from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
@@ -61,7 +61,7 @@ class Application(Container, ApplicationContract):
             "request": [Request],
             "response": [ResponseFactory],
             "router": [Router, RouterContract],
-            "event": [Dispatcher],
+            "events": [Dispatcher],
             "validator": [ValidationFactory],
         }
 
@@ -90,14 +90,14 @@ class Application(Container, ApplicationContract):
         return self.__has_been_bootstrapped
 
     def before_bootstraping(self, bootstrapper, callback):
-        self.make("event").listen(f"bootstraping: {bootstrapper}", callback)
+        self.make("events").listen(f"bootstraping: {bootstrapper}", callback)
 
     def after_bootstraping(self, bootstrapper, callback):
-        self.make("event").listen(f"bootstrapped: {bootstrapper}", callback)
+        self.make("events").listen(f"bootstrapped: {bootstrapper}", callback)
 
     def bootstrap_with(self, bootstrappers):
         try:
-            events = self.make("event")
+            events = self.make("events")
 
             for bootstrapper in bootstrappers:
                 events.dispatch(f"bootstraping: {bootstrapper}", [self])

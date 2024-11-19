@@ -1,7 +1,4 @@
 from typing import Any, Dict, List, Self
-from urllib.parse import parse_qs, urlparse
-
-from Illuminate.Collections.helpers import collect
 from Illuminate.Contracts.Http.Request import Request
 from Illuminate.Routing.Controllers.HasMiddleware import Middleware
 
@@ -21,9 +18,9 @@ class Route:
 
         self.__computed_middleware = None
 
-        self.__route_params = {}
+        self.__route_params: dict = {}
 
-        self.__query_params = {}
+        self.__query_params: dict = {}
 
         self.__router = None
 
@@ -150,17 +147,7 @@ class Route:
         return [middleware.name for middleware in middleware if middleware.filter(uses)]
 
     def set_query_params(self, request: Request) -> Self:
-        full_url = request.get_full_url()
-
-        parsed_url = urlparse(full_url)
-
-        parsed_query_string = parse_qs(parsed_url.query)
-
-        self.__query_params = dict(
-            collect(parsed_query_string)
-            .map(lambda value: value[0] if len(value) == 1 else value)
-            .all()
-        )
+        self.__query_params = request.query()
 
         return self
 
