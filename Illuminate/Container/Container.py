@@ -3,7 +3,7 @@ import inspect
 from abc import ABC
 from typing import Any, Dict, Callable, Optional
 from inspect import signature, getfullargspec
-
+from Illuminate.Helpers.Util import Util
 from Illuminate.Support.builtins import array_merge
 
 
@@ -92,12 +92,16 @@ class Container(ABC):
         )
 
         for type, callbacks in self._before_resolving_callbacks.items():
-            if type == abstract or issubclass(type, abstract):
+            if type == abstract or (
+                inspect.isclass(type)
+                and inspect.isclass(abstract)
+                and issubclass(type, abstract)
+            ):
                 self._fire_before_callback_array(abstract, parameters, callbacks)
 
     def _fire_before_callback_array(self, abstract, parameters, callbacks):
         for callback in callbacks:
-            callback(abstract, parameters, self)
+            Util.callback_with_dynamic_args(callback, [abstract, parameters, self])
 
     def _fire_resolving_callbacks(self, abstract, concrete):
         self._fire_callback_array(concrete, self._global_resolving_callbacks)
@@ -123,14 +127,16 @@ class Container(ABC):
         results = []
 
         for type, callbacks in callbacks_per_type.items():
-            if type == abstract or isinstance(concrete, type):
+            if type == abstract or (
+                inspect.isclass(type) and isinstance(concrete, type)
+            ):
                 results = array_merge(results, callbacks)
 
         return results
 
     def _fire_callback_array(self, concrete, callbacks):
         for callback in callbacks:
-            callback(concrete, self)
+            Util.callback_with_dynamic_args(callback, [concrete, self])
 
     def before_resolving(self, abstract, callback=None):
         if isinstance(abstract, str):

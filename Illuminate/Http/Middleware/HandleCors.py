@@ -1,6 +1,6 @@
 import re
-from typing import Any
 
+from typing import Any
 from Illuminate.Contracts.Container.Container import Container
 
 
@@ -10,13 +10,13 @@ class HandleCors:
 
     def handle(self, request, next) -> Any:
         config = self.__container.make("config")
+
         cors = config.get("cors", {})
+
         full_url = request.get_full_url()
 
         if not self.has_matching_path(cors, full_url):
             return next(request)
-
-        print("adding cors")
 
         return next(request)
 

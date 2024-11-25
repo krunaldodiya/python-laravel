@@ -2,8 +2,9 @@ from abc import abstractmethod
 from typing import Any, Type
 from pathlib import Path
 
+from Illuminate.Foundation.Console.Input.ArgvInput import ArgvInput
 from Illuminate.Contracts.Container.Container import Container
-from Illuminate.Contracts.Http.Request import Request
+from Illuminate.Http.RequestAdapter import RequestAdapter
 
 
 class Application(Container):
@@ -132,4 +133,24 @@ class Application(Container):
     @abstractmethod
     def provider_is_loaded(self, base_key: str):
         """Gets the service provider by base key."""
+        pass
+
+    @abstractmethod
+    def handle_request(self, request: RequestAdapter):
+        """handle incoming request."""
+        pass
+
+    @abstractmethod
+    def handle_command(self, input: ArgvInput):
+        """handle command."""
+        pass
+
+    @abstractmethod
+    def running_in_console(self) -> bool:
+        """handle command."""
+        pass
+
+    @abstractmethod
+    def set_running_in_console(self) -> "Application":
+        """handle command."""
         pass

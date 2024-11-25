@@ -9,7 +9,7 @@ class Dispatcher:
         self.__app = app
         self.__listeners: Dict[Any, Any] = {}
 
-    def dispatch(self, event, args={}):
+    def dispatch(self, event, args=[]):
         event_name = self.parse_event_name(event)
 
         callbacks = self.__listeners.get(event_name, [])
@@ -26,9 +26,9 @@ class Dispatcher:
 
     def handle_callback(self, callback, event, args):
         if inspect.isclass(callback):
-            callback(**args).handle(event)
+            callback(*args).handle(event)
         else:
-            callback(**args)
+            callback(*args)
 
     def parse_event_name(self, event):
         if isinstance(event, str):

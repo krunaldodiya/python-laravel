@@ -1,7 +1,9 @@
 from datetime import datetime
 from typing import Optional
 
-from Illuminate.Contracts.Foundation.Application import Application
+from Illuminate.Contracts.Foundation.Application import (
+    Application as ApplicationContract,
+)
 from Illuminate.Foundation.Http.Events.RequestHandled import RequestHandled
 from Illuminate.Support.Facades.App import App
 from Illuminate.Contracts.Http.Request import Request
@@ -28,7 +30,7 @@ class Kernel:
     __middleware_aliases: dict = {}
     __route_middleware: dict = {}
 
-    def __init__(self, app: Application, router: RouterContract) -> None:
+    def __init__(self, app: ApplicationContract, router: RouterContract) -> None:
         self.__app = app
         self.__router = router
 
@@ -52,6 +54,10 @@ class Kernel:
         self.request_started_at: Optional[datetime] = None
 
         self.__sync_middleware_to_router()
+
+    @property
+    def app(self):
+        return self.__app
 
     @property
     def router(self):

@@ -1,7 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any
-
 from Illuminate.Contracts.Http.Request import Request
 from Illuminate.Contracts.Http.Response import Response
 

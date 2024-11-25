@@ -1,15 +1,19 @@
 from pathlib import Path
-from typing import Any, Type
+from typing import Any, Self, Type
 from Illuminate.Auth.AuthServiceProvider import AuthServiceProvider
+from Illuminate.Foundation.Console.Input.ArgvInput import ArgvInput
+from Illuminate.Foundation.Console.Output.ConsoleOutput import ConsoleOutput
 from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Events.EventServiceProvider import EventServiceProvider
+from Illuminate.Foundation.Configuration.ApplicationBuilder import ApplicationBuilder
 from Illuminate.Http.Request import Request
 from Illuminate.Routing.ResponseFactory import ResponseFactory
 from Illuminate.Log.LogServiceProvider import LogServiceProvider
 from Illuminate.Routing.RoutingServiceProvider import RoutingServiceProvider
 
-
+from Illuminate.Contracts.Http.Kernel import Kernel as HttpKernelContract
+from Illuminate.Contracts.Console.Kernel import Kernel as ConsoleKernelContract
 from Illuminate.Container.Container import Container
 from Illuminate.Contracts.Container.Container import Container as ContainerContract
 from Illuminate.Contracts.Foundation.Application import (
@@ -28,6 +32,8 @@ from Illuminate.Validation.ValidationServiceProvider import ValidationServicePro
 
 
 class Application(Container, ApplicationContract):
+    VERSION = "0.1.1"
+
     def __init__(self, base_path: str = None) -> None:
         super().__init__()
 
@@ -82,6 +88,9 @@ class Application(Container, ApplicationContract):
 
     def __getitem__(self, key):
         return self.get_instance(key)
+
+    def version(self):
+        return self.VERSION
 
     def is_booted(self):
         return self.__booted
@@ -269,7 +278,7 @@ class Application(Container, ApplicationContract):
         self.register(ValidationServiceProvider)
 
     def register_configured_providers(self) -> Any:
-        providers = Config.get("app.providers")
+        providers = Config.get("app.providers", [])
 
         for provider_class in providers:
             self.register(provider_class)
@@ -347,8 +356,43 @@ class Application(Container, ApplicationContract):
     def detect_environment(self, callback):
         self.instance("env", callback())
 
-    def running_in_console(self):
+    def set_running_in_console(self) -> Self:
+        self.__running_in_console = True
+
+        return self
+
+    def running_in_console(self) -> bool:
         return self.__running_in_console
 
     def bound(self, abstract):
         return self.get_instance(abstract) is not None
+
+    @classmethod
+    def configure(cls, base_path: str = None) -> ApplicationBuilder:
+        return (
+            ApplicationBuilder(cls(base_path))
+            .with_kernels()
+            .with_events()
+            .with_commands()
+            .with_providers()
+        )
+
+    def handle_request(self, request: Request):
+        kernel: HttpKernelContract = self.make(HttpKernelContract)
+
+        response = kernel.handle(request)
+
+        kernel.terminate(request, response)
+
+        return response
+
+    def handle_command(self, input: ArgvInput):
+        self.set_running_in_console()
+
+        kernel: ConsoleKernelContract = self.make(ConsoleKernelContract)
+
+        response = kernel.handle(input, ConsoleOutput())
+
+        kernel.terminate(input, response)
+
+        return response

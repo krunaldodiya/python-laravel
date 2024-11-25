@@ -1,7 +1,8 @@
+import sys
 import importlib
 
 from abc import ABC, abstractmethod
-import sys
+from Illuminate.Foundation.Console.Application import Application as Commander
 
 
 class ServiceProvider(ABC):
@@ -42,3 +43,13 @@ class ServiceProvider(ABC):
                 importlib.import_module(loader)
         except Exception as e:
             raise e
+
+    def commands(self, *commands):
+        all_commands = []
+
+        if len(commands) == 1 and isinstance(commands[0], list):
+            all_commands.extend(commands[0])
+        else:
+            all_commands.extend(commands)
+
+        Commander.starting(lambda commander: commander.resolve_commands(all_commands))

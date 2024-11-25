@@ -1,0 +1,2 @@
+class ConsoleOutput:
+    pass
