@@ -1,4 +1,5 @@
 import inspect
+
 from typing import Self
 from Illuminate.Contracts.Foundation.Application import (
     Application as ApplicationContract,
@@ -17,13 +18,13 @@ class Application:
     command_map: dict = {}
 
     def __init__(self, app: ApplicationContract, events: Dispatcher, version):
-        self.__app = app
+        self.application = app
 
-        self.__events = events
+        self.events = events
 
-        self.__version = version
+        self.version = version
 
-        self.__events.dispatch(CommanderStarting(self))
+        self.events.dispatch(CommanderStarting(self))
 
         self.bootstrap()
 
@@ -38,18 +39,40 @@ class Application:
             Util.callback_with_dynamic_args(bootstapper, [self])
 
     def run(self, input: ArgvInput, output: ConsoleOutput):
-        assert self.command_loader is not None, "no command loader set"
+        try:
+            assert self.command_loader is not None, "no command loader set"
 
-        command = self.command_loader.get_current_command(input)
+            command = self.command_loader.get_current_command(input)
 
-        command.validate(input)
+            command.set_silent(output.silent)
 
-        action = getattr(command, "handle")
+            command.parse_input(input)
 
-        return action()
+            if command.option("help") or command.option("h"):
+                return self.call("help", {"name": command.name})
+
+            command.validate()
+
+            action = getattr(command, "handle")
+
+            return action()
+        except Exception as e:
+            print("error", e)
 
     def terminate(self):
         pass
+
+    def call_silent(self, command: str, arguments: dict = {}):
+        return self.call(command, arguments, True)
+
+    def call(self, command: str, arguments: dict = {}, silent=False):
+        data = [command, *list(arguments.values())]
+
+        argv_input = ArgvInput.from_inputs(data)
+
+        results = self.application.handle_command(argv_input, silent)
+
+        return results
 
     def resolve_commands(self, commands) -> Self:
         all_commands = []
@@ -66,21 +89,21 @@ class Application:
 
     def resolve(self, command):
         if inspect.isclass(command) and issubclass(command, Command):
-            return self.add(self.__app.make(command))
+            return self.add(self.application.make(command))
 
         if isinstance(command, Command):
             return self.add(command)
 
-        return self.add(self.__app.make(command))
+        return self.add(self.application.make(command))
 
     def add(self, command: Command) -> Command:
-        command.set_application(self.__app)
+        command.set_commander(self)
 
         self.command_map[command.name] = command
 
         return command
 
     def set_container_command_loader(self) -> Self:
-        self.command_loader = ContainerCommandLoader(self.__app, self.command_map)
+        self.command_loader = ContainerCommandLoader(self.application, self.command_map)
 
         return self

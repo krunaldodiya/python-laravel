@@ -13,10 +13,10 @@ class ArgvInput:
         return self.__inputs
 
     def get_options(self):
-        return [input for input in self.__inputs if input.startswith("--")]
+        return [input for input in self.__inputs if input.startswith("-")]
 
     def get_arguments(self):
-        return [input for input in self.__inputs if not input.startswith("--")]
+        return [input for input in self.__inputs if not input.startswith("-")]
 
     def get_first_argument(self):
         arguments = self.get_arguments()

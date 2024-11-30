@@ -8,23 +8,16 @@ class ContainerCommandLoader:
         self.app = app
         self.command_map: Dict[str, Command] = command_map
 
-    def get_current_command(self, command: ArgvInput) -> Command:
-        command_name = command.get_first_argument()
+    def get_current_command(self, io: ArgvInput) -> Command:
+        command_name = io.get_first_argument()
 
         if not command_name:
-            return self.handle_invalid_command(command)
+            return self.handle_invalid_command()
 
         try:
             return self.command_map[command_name]
         except KeyError:
-            return self.handle_invalid_command(command)
+            return self.handle_invalid_command()
 
-    def handle_invalid_command(self, command: ArgvInput):
-        print("Invalid command, available commands are:")
-        print("-----------------------------")
-
-        for item in self.command_map.values():
-            if not item.hidden:
-                print(item.name)
-        print("-----------------------------")
-        exit()
+    def handle_invalid_command(self) -> Command:
+        return self.command_map["list"]

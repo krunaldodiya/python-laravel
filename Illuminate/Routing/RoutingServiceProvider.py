@@ -68,7 +68,9 @@ class RoutingServiceProvider(ServiceProvider):
 
     def _register_http_request(self):
         def lambda_function(app: Application):
-            return Request.capture(app)
+            request = Request.capture(app)
+
+            return request
 
         self.__app.singleton("request", lambda_function)
 

@@ -76,6 +76,9 @@ class EnumeratesValues(Conditionable, Enumerable):
             )
         )
 
+    def where_instance_of(self, instance: Any) -> Self:
+        return self.filter(lambda item: isinstance(item, instance))
+
     def partition(self, data_key, data_operator=None, data_value=None):
         passed = {}
         failed = {}

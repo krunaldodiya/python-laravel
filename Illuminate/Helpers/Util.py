@@ -7,6 +7,13 @@ from typing import Any, Callable, Dict, List
 
 class Util:
     @classmethod
+    def to_boolean(cls, value: Any):
+        try:
+            return bool(value)
+        except:
+            return value
+
+    @classmethod
     def convert_values_to_string(cls, data):
         copied_data = copy.copy(data)
 

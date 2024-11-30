@@ -1,2 +1,3 @@
 class ConsoleOutput:
-    pass
+    def __init__(self, silent: bool = False):
+        self.silent = silent

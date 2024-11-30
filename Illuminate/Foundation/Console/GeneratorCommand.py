@@ -3,6 +3,7 @@ import os
 
 from pathlib import Path
 from Illuminate.Foundation.Console.Command import Command
+from Illuminate.Foundation.Console.Input.InputArgument import InputArgument
 
 
 class GeneratorCommand(Command):
@@ -14,9 +15,18 @@ class GeneratorCommand(Command):
                 self.get_stub_vars(),
             )
 
-            return f"{self.type} [{self.get_path()}] created successfully."
+            self.response()
         except Exception as e:
-            return e
+            self.error(str(e))
+
+    def get_arguments(self):
+        return [
+            ["name", InputArgument.REQUIRED, f"The name of the {self.type}", None],
+        ]
+
+    def response(self):
+        if not self.silent:
+            self.success(f"{self.type} [{self.get_path()}] created successfully.")
 
     def get_path(self):
         namespace = self.get_default_namespace(self.root_namespace())
@@ -26,9 +36,6 @@ class GeneratorCommand(Command):
         name = self.get_name_input()
 
         return f"{namespace}/{name}.py"
-
-    def get_name_input(self):
-        return self.argument("name").strip()
 
     def resolve_stub_path(self, stub: str, console_path="/"):
         return Path(console_path) / stub.strip("/")
@@ -46,7 +53,8 @@ class GeneratorCommand(Command):
         os.makedirs(os.path.dirname(main_file), exist_ok=True)
 
         if os.path.exists(main_file):
-            raise Exception(f"{self.type} already exists.")
+            if not self.silent:
+                raise Exception(f"{self.type} already exists.")
 
         with open(stub_file, "r") as stub_file:
             stub_content = stub_file.read()

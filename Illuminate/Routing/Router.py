@@ -300,7 +300,10 @@ class Router:
         )
 
     def _load_routes(self, route_resolver):
-        route_resolver(self)
+        try:
+            route_resolver(self)
+        except Exception as e:
+            raise e
 
     def __getattr__(cls, attribute, *args, **kwargs):
         if not cls.route_collection.all_routes:

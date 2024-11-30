@@ -61,7 +61,9 @@ class Kernel:
 
             self.__bootstrap()
 
-            return self.get_commander().run(input, output)
+            commander = self.get_commander()
+
+            return commander.run(input, output)
         except Exception as e:
             print(e)
 

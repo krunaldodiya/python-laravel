@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Type
 from Illuminate.Events.Dispatcher import Dispatcher
-
 from Illuminate.Support.ServiceProvider import ServiceProvider
 
 if TYPE_CHECKING:

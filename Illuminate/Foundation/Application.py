@@ -7,6 +7,10 @@ from Illuminate.Events.Dispatcher import Dispatcher
 
 from Illuminate.Events.EventServiceProvider import EventServiceProvider
 from Illuminate.Foundation.Configuration.ApplicationBuilder import ApplicationBuilder
+from Illuminate.Foundation.Http.Events.RequestReceived import RequestReceived
+from Illuminate.Foundation.Providers.CommanderServiceProvider import (
+    CommanderServiceProvider,
+)
 from Illuminate.Http.Request import Request
 from Illuminate.Routing.ResponseFactory import ResponseFactory
 from Illuminate.Log.LogServiceProvider import LogServiceProvider
@@ -276,6 +280,7 @@ class Application(Container, ApplicationContract):
         self.register(LogServiceProvider)
         self.register(RoutingServiceProvider)
         self.register(ValidationServiceProvider)
+        self.register(CommanderServiceProvider)
 
     def register_configured_providers(self) -> Any:
         providers = Config.get("app.providers", [])
@@ -369,8 +374,10 @@ class Application(Container, ApplicationContract):
 
     @classmethod
     def configure(cls, base_path: str = None) -> ApplicationBuilder:
+        application = cls(base_path)
+
         return (
-            ApplicationBuilder(cls(base_path))
+            ApplicationBuilder(application)
             .with_kernels()
             .with_events()
             .with_commands()
@@ -378,6 +385,8 @@ class Application(Container, ApplicationContract):
         )
 
     def handle_request(self, request: Request):
+        self.make("events").dispatch(RequestReceived(request))
+
         kernel: HttpKernelContract = self.make(HttpKernelContract)
 
         response = kernel.handle(request)
@@ -386,12 +395,12 @@ class Application(Container, ApplicationContract):
 
         return response
 
-    def handle_command(self, input: ArgvInput):
+    def handle_command(self, input: ArgvInput, silent=False):
         self.set_running_in_console()
 
         kernel: ConsoleKernelContract = self.make(ConsoleKernelContract)
 
-        response = kernel.handle(input, ConsoleOutput())
+        response = kernel.handle(input, ConsoleOutput(silent))
 
         kernel.terminate(input, response)
 

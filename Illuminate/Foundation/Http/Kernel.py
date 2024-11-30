@@ -145,7 +145,8 @@ class Kernel:
             raise e
 
     def terminate(self, request: Request, response: Response):
-        self.__app.forget_binding("request")
+        if self.__app.bound("request"):
+            self.__app.forget_binding("request")
 
     def push_middleware(self, middleware):
         if middleware not in self.__middleware:

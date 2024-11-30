@@ -58,6 +58,9 @@ class Collection(EnumeratesValues, Generic[T], CollectionContract):
 
         return self.__class__(results)
 
+    def flat_map(self, callback: Callable[..., Any]) -> Self:
+        return self.map(callback).flatten()
+
     def map(self, callback: Callable[..., Any]) -> Self:
         self._check_is_callable(callback)
 
